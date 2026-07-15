@@ -1,0 +1,430 @@
+// ============================================================
+// PUSTASDA — Prisma Schema (SQLite)
+// 24 models — Pusat Prestasi SMK Telkom Sidoarjo
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// CORE: Users & Profiles
+// ============================================================
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  password        String
+  role            String    @default("student") // student | teacher | admin | developer
+  photo           String?   @default("default-avatar.png")
+  waNumber        String?   @map("wa_number")
+  isActive        Boolean   @default(true) @map("is_active")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  rememberToken   String?   @map("remember_token")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  studentProfile    StudentProfile?
+  teacherProfile    TeacherProfile?
+  participations    Participation[]
+  notifications     Notification[]
+  savedCompetitions CompetitionSave[]
+  saveFolders       SaveFolder[]
+  userBadges        UserBadge[]
+  createdCompetitions Competition[] @relation("CompetitionCreator")
+  ledTeams          Team[]          @relation("TeamLeader")
+  teamMembers       TeamMember[]
+  mentorships       Mentorship[]    @relation("MentorTeacher")
+  activityLogs      ActivityLog[]
+  sessions          Session[]
+
+  @@map("users")
+}
+
+model StudentProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  nis             String?
+  kelas           String?
+  jurusan         String?
+  angkatan        String?
+  bioAi           String?  @map("bio_ai")
+  preferences     String?  // JSON string
+  privacyProfile  String   @default("public") @map("privacy_profile") // public | private
+  allowTeamInvite Boolean  @default(true) @map("allow_team_invite")
+  notificationPref String  @default("all") @map("notification_pref") // all | important | none
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+model TeacherProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique @map("user_id")
+  nip            String?
+  bidangKeahlian String?  @map("bidang_keahlian")
+  jabatan        String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_profiles")
+}
+
+// ============================================================
+// AUTH: Password Reset & Sessions
+// ============================================================
+
+model PasswordResetToken {
+  email     String   @id
+  token     String
+  createdAt DateTime? @map("created_at")
+
+  @@map("password_reset_tokens")
+}
+
+model Session {
+  id           String   @id
+  userId       Int?     @map("user_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  payload      String
+  lastActivity Int      @map("last_activity")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============================================================
+// COMPETITION SYSTEM
+// ============================================================
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String
+  icon         String        @default("fa-trophy")
+  color        String        @default("#e31e25")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  competitions Competition[]
+  fields       Field[]
+
+  @@map("categories")
+}
+
+model Field {
+  id           Int           @id @default(autoincrement())
+  categoryId   Int?          @map("category_id")
+  name         String
+  icon         String        @default("fa-star")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  competitions Competition[]
+
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("fields")
+}
+
+model Competition {
+  id                 Int      @id @default(autoincrement())
+  categoryId         Int      @map("category_id")
+  fieldId            Int      @map("field_id")
+  createdBy          Int      @map("created_by")
+  title              String
+  organizer          String
+  level              String   // sekolah | kota | provinsi | nasional | internasional
+  type               String   @default("solo") // solo | team
+  maxMembers         Int      @default(1) @map("max_members")
+  minMembers         Int      @default(1) @map("min_members")
+  description        String?
+  requirements       String?
+  linkRegistration   String?  @map("link_registration")
+  guidebookLink      String?  @map("guidebook_link")
+  poster             String?
+  cover              String?
+  registerDeadline   DateTime? @map("register_deadline")
+  deadline           DateTime
+  announcementDate   DateTime? @map("announcement_date")
+  totalStages        Int      @default(1) @map("total_stages")
+  isActive           Boolean  @default(true) @map("is_active")
+  verificationStatus String   @default("approved") @map("verification_status") // pending | approved | rejected
+  isTrending         Boolean  @default(false) @map("is_trending")
+  viewCount          Int      @default(0) @map("view_count")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  category       Category          @relation(fields: [categoryId], references: [id])
+  field          Field             @relation(fields: [fieldId], references: [id])
+  creator        User              @relation("CompetitionCreator", fields: [createdBy], references: [id])
+  stages         CompetitionStage[]
+  participations Participation[]
+  teams          Team[]
+  saves          CompetitionSave[]
+
+  @@map("competitions")
+}
+
+model CompetitionStage {
+  id            Int       @id @default(autoincrement())
+  competitionId Int       @map("competition_id")
+  stageNumber   Int       @map("stage_number")
+  stageName     String    @map("stage_name")
+  deadline      DateTime?
+  description   String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@map("competition_stages")
+}
+
+// ============================================================
+// BOOKMARKS / SAVES
+// ============================================================
+
+model SaveFolder {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  icon      String   @default("fa-folder")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  saves CompetitionSave[]
+
+  @@map("save_folders")
+}
+
+model CompetitionSave {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  competitionId Int      @map("competition_id")
+  folderId      Int?     @map("folder_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  folder      SaveFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, competitionId])
+  @@map("competition_saves")
+}
+
+// ============================================================
+// TEAM SYSTEM
+// ============================================================
+
+model Team {
+  id            Int      @id @default(autoincrement())
+  competitionId Int      @map("competition_id")
+  leaderId      Int      @map("leader_id")
+  teamName      String?  @map("team_name")
+  inviteCode    String   @unique @map("invite_code")
+  status        String   @default("open") // open | full | closed
+  isPublic      Boolean  @default(false) @map("is_public")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  competition    Competition     @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  leader         User            @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  members        TeamMember[]
+  participations Participation[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        Int      @id @default(autoincrement())
+  teamId    Int      @map("team_id")
+  userId    Int      @map("user_id")
+  role      String?  // custom role tag from leader
+  status    String   @default("pending") // pending | accepted | rejected
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+// ============================================================
+// PARTICIPATION SYSTEM
+// ============================================================
+
+model Participation {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  competitionId Int      @map("competition_id")
+  teamId        Int?     @map("team_id")
+  status        String   @default("registered") // registered | in_progress | submitted | not_submitted | completed
+  result        String   @default("belum_diisi") // juara_1 | juara_2 | juara_3 | juara_harapan | favorit | terpilih | lolos_tahap | tidak_lolos | belum_diisi
+  currentStage  Int      @default(1) @map("current_stage")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competition Competition        @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  team        Team?              @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  steps       ParticipationStep[]
+  mentorship  Mentorship?
+
+  @@map("participations")
+}
+
+model ParticipationStep {
+  id              Int       @id @default(autoincrement())
+  participationId Int       @map("participation_id")
+  stepName        String    @map("step_name")
+  stepOrder       Int       @map("step_order")
+  isConfirmed     Boolean   @default(false) @map("is_confirmed")
+  confirmedAt     DateTime? @map("confirmed_at")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+
+  @@map("participation_steps")
+}
+
+// ============================================================
+// MENTORSHIP SYSTEM
+// ============================================================
+
+model Mentorship {
+  id              Int       @id @default(autoincrement())
+  participationId Int       @unique @map("participation_id")
+  teacherId       Int       @map("teacher_id")
+  status          String    @default("pending") // pending | accepted | rejected
+  respondedAt     DateTime? @map("responded_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  participation Participation        @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  teacher       User                 @relation("MentorTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  activities    MentorshipActivity[]
+
+  @@map("mentorships")
+}
+
+model MentorshipActivity {
+  id           Int       @id @default(autoincrement())
+  mentorshipId Int       @map("mentorship_id")
+  title        String
+  description  String?
+  scheduleDate DateTime? @map("schedule_date")
+  status       String    @default("pending") // pending | approved | rejected
+  teacherNotes String?   @map("teacher_notes")
+  documentUrl  String?   @map("document_url")
+  location     String?   @default("Offline / Sekolah")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  mentorship Mentorship @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+
+  @@map("mentorship_activities")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String
+  title     String
+  body      String
+  data      String?   // JSON string
+  icon      String    @default("fa-bell")
+  color     String    @default("#e31e25")
+  isRead    Boolean   @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ============================================================
+// GAMIFICATION: Badges
+// ============================================================
+
+model Badge {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  icon           String   @default("fa-medal")
+  color          String   @default("#f5a623")
+  conditionType  String?  @map("condition_type") // total_participation | total_win | etc
+  conditionValue Int      @default(1) @map("condition_value")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       Int      @id @default(autoincrement())
+  userId   Int      @map("user_id")
+  badgeId  Int      @map("badge_id")
+  earnedAt DateTime @default(now()) @map("earned_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// ============================================================
+// APP SETTINGS & LOGS
+// ============================================================
+
+model AppSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String?
+  group     String   @default("general")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  action      String
+  module      String?
+  description String?
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}

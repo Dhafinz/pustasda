@@ -1,14 +1,10 @@
-import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
-export default async function Home() {
+export default async function DashboardRedirect() {
   const session = await auth()
+  if (!session) redirect('/login')
 
-  if (!session) {
-    redirect('/login')
-  }
-
-  // Redirect based on role
   const role = session.user.role
   if (role === 'student') redirect('/student')
   if (role === 'teacher') redirect('/teacher')
