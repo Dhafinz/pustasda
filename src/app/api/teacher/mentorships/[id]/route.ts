@@ -63,14 +63,18 @@ export async function PATCH(
     })
 
     // Log Activity
-    await prisma.activityLog.create({
-      data: {
-        userId: teacherId,
-        action: `mentorship_${status}`,
-        module: 'mentorship',
-        description: `Mentorship ID ${mentorshipId} ${status} for student ${mentorship.participation.user.name}`
-      }
-    })
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: teacherId,
+          action: `mentorship_${status}`,
+          module: 'mentorship',
+          description: `Mentorship ID ${mentorshipId} ${status} for student ${mentorship.participation.user.name}`
+        }
+      })
+    } catch (e) {
+      console.error('Failed to write activity log:', e)
+    }
 
     return NextResponse.json({
       message: `Pengajuan bimbingan berhasil ${status === 'accepted' ? 'diterima' : 'ditolak'}`,

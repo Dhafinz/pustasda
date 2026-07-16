@@ -550,11 +550,11 @@ export function StudentExploreClient({
               <div>
                 {(() => {
                   const posters = selectedComp.poster
-                    ? selectedComp.poster.split(',').map((p) => p.trim()).filter(Boolean)
+                    ? selectedComp.poster.split(/(?<!base64),/).map((p) => p.trim()).filter(Boolean)
                     : [];
                   if (posters.length > 0) {
                     const activePoster = posters[currentPosterIdx] || posters[0];
-                    const srcUrl = (activePoster.startsWith('/') || activePoster.startsWith('http'))
+                    const srcUrl = (activePoster.startsWith('/') || activePoster.startsWith('http') || activePoster.startsWith('data:'))
                       ? activePoster
                       : `/images/posters/${activePoster}`;
                     return (

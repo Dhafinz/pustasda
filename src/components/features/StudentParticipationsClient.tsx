@@ -500,8 +500,8 @@ export function StudentParticipationsClient({
                   }}
                 >
                   {p.competition.poster ? (() => {
-                    const firstPoster = p.competition.poster.split(',')[0].trim();
-                    const srcUrl = (firstPoster.startsWith('/') || firstPoster.startsWith('http')) 
+                    const firstPoster = p.competition.poster.split(/(?<!base64),/)[0].trim();
+                    const srcUrl = (firstPoster.startsWith('/') || firstPoster.startsWith('http') || firstPoster.startsWith('data:')) 
                       ? firstPoster 
                       : `/images/posters/${firstPoster}`;
                     return (

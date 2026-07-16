@@ -197,14 +197,18 @@ export async function PATCH(
     })
 
     // Log Activity
-    await prisma.activityLog.create({
-      data: {
-        userId,
-        action: `participation_${action}`,
-        module: 'participation',
-        description: `Action: ${action} for competition ${participation.competition.title}. Status updated to ${updatedStatus}.`
-      }
-    })
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId,
+          action: `participation_${action}`,
+          module: 'participation',
+          description: `Action: ${action} for competition ${participation.competition.title}. Status updated to ${updatedStatus}.`
+        }
+      })
+    } catch (e) {
+      console.error('Failed to write activity log:', e)
+    }
 
     return NextResponse.json({
       message: 'Status partisipasi berhasil diperbarui',

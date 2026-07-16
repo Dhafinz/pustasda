@@ -177,14 +177,18 @@ export async function POST(request: NextRequest) {
     })
 
     // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId,
-        action: 'join_competition',
-        module: 'competition',
-        description: `Joined competition: ${competition.title}`,
-      }
-    })
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId,
+          action: 'join_competition',
+          module: 'competition',
+          description: `Joined competition: ${competition.title}`,
+        }
+      })
+    } catch (e) {
+      console.error('Failed to write activity log:', e)
+    }
 
     return NextResponse.json({
       participation,

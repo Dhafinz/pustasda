@@ -105,14 +105,18 @@ export async function POST(request: NextRequest) {
     })
 
     // Log Activity
-    await prisma.activityLog.create({
-      data: {
-        userId: adminId,
-        action: 'admin_competition_create',
-        module: 'admin',
-        description: `Created competition: ${title}`
-      }
-    })
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: adminId,
+          action: 'admin_competition_create',
+          module: 'admin',
+          description: `Created competition: ${title}`
+        }
+      })
+    } catch (e) {
+      console.error('Failed to write activity log:', e)
+    }
 
     return NextResponse.json({
       message: 'Kompetisi baru berhasil dibuat',

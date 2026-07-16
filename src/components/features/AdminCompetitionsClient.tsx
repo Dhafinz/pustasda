@@ -492,15 +492,15 @@ export function AdminCompetitionsClient({
             <label className="form-label">Poster Lomba (JPG/PNG)</label>
             {posterUrls ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-                {posterUrls.split(',').map(url => url.trim()).filter(Boolean).map((url, idx) => {
-                  const srcUrl = (url.startsWith('/') || url.startsWith('http')) ? url : `/images/posters/${url}`;
+                {posterUrls.split(/(?<!base64),/).map(url => url.trim()).filter(Boolean).map((url, idx) => {
+                  const srcUrl = (url.startsWith('/') || url.startsWith('http') || url.startsWith('data:')) ? url : `/images/posters/${url}`;
                   return (
                     <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--gray-mid)', boxShadow: 'var(--shadow-sm)' }}>
                       <img src={srcUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster preview" />
                       <button
                         type="button"
                         onClick={() => {
-                          const remaining = posterUrls.split(',').map(u => u.trim()).filter(Boolean).filter((_, i) => i !== idx);
+                          const remaining = posterUrls.split(/(?<!base64),/).map(u => u.trim()).filter(Boolean).filter((_, i) => i !== idx);
                           setPosterUrls(remaining.join(', '));
                         }}
                         style={{
@@ -698,15 +698,15 @@ export function AdminCompetitionsClient({
             <label className="form-label">Poster Lomba (JPG/PNG)</label>
             {editPosterUrls ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-                {editPosterUrls.split(',').map(url => url.trim()).filter(Boolean).map((url, idx) => {
-                  const srcUrl = (url.startsWith('/') || url.startsWith('http')) ? url : `/images/posters/${url}`;
+                {editPosterUrls.split(/(?<!base64),/).map(url => url.trim()).filter(Boolean).map((url, idx) => {
+                  const srcUrl = (url.startsWith('/') || url.startsWith('http') || url.startsWith('data:')) ? url : `/images/posters/${url}`;
                   return (
                     <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--gray-mid)', boxShadow: 'var(--shadow-sm)' }}>
                       <img src={srcUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster preview" />
                       <button
                         type="button"
                         onClick={() => {
-                          const remaining = editPosterUrls.split(',').map(u => u.trim()).filter(Boolean).filter((_, i) => i !== idx);
+                          const remaining = editPosterUrls.split(/(?<!base64),/).map(u => u.trim()).filter(Boolean).filter((_, i) => i !== idx);
                           setEditPosterUrls(remaining.join(', '));
                         }}
                         style={{

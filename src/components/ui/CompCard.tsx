@@ -54,8 +54,8 @@ export function CompCard({ title, category, organizer, level, type, deadline, po
         </div>
       )}
       {poster ? (() => {
-        const firstPoster = poster.split(',')[0].trim();
-        const srcUrl = (firstPoster.startsWith('/') || firstPoster.startsWith('http')) 
+        const firstPoster = poster.split(/(?<!base64),/)[0].trim();
+        const srcUrl = (firstPoster.startsWith('/') || firstPoster.startsWith('http') || firstPoster.startsWith('data:')) 
           ? firstPoster 
           : `/images/posters/${firstPoster}`;
         return <img src={srcUrl} alt={title} className="comp-card-poster" />;

@@ -129,14 +129,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Log Activity
-    await prisma.activityLog.create({
-      data: {
-        userId: parseInt(session.user.id),
-        action: 'admin_bulk_user_create',
-        module: 'admin',
-        description: `Created ${createdUsers.length} users. Duplicates skipped: ${duplicateEmails.join(', ') || 'None'}`
-      }
-    })
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: parseInt(session.user.id),
+          action: 'admin_bulk_user_create',
+          module: 'admin',
+          description: `Created ${createdUsers.length} users. Duplicates skipped: ${duplicateEmails.join(', ') || 'None'}`
+        }
+      })
+    } catch (e) {
+      console.error('Failed to write activity log:', e)
+    }
 
     return NextResponse.json({
       message: `Berhasil memproses pembuatan akun`,
