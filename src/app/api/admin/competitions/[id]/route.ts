@@ -21,13 +21,29 @@ export async function PATCH(
       return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
 
+    const parsedCategoryId = parseInt(categoryId)
+    const parsedFieldId = parseInt(fieldId)
+
+    if (isNaN(parsedCategoryId) || isNaN(parsedFieldId)) {
+      return NextResponse.json({ error: 'Data bidang/kategori tidak valid' }, { status: 400 })
+    }
+
+    const selectedField = await prisma.field.findUnique({
+      where: { id: parsedFieldId },
+      select: { categoryId: true }
+    })
+
+    if (!selectedField || selectedField.categoryId !== parsedCategoryId) {
+      return NextResponse.json({ error: 'Kategori tidak sesuai dengan bidang yang dipilih' }, { status: 400 })
+    }
+
     const updated = await prisma.competition.update({
       where: { id: compId },
       data: {
         title,
         organizer,
-        categoryId: parseInt(categoryId),
-        fieldId: parseInt(fieldId),
+        categoryId: parsedCategoryId,
+        fieldId: parsedFieldId,
         level,
         type,
         description,

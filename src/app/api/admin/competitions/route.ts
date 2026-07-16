@@ -58,12 +58,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Field wajib tidak boleh kosong' }, { status: 400 })
     }
 
+    const parsedCategoryId = parseInt(categoryId)
+    const parsedFieldId = parseInt(fieldId)
+
+    if (isNaN(parsedCategoryId) || isNaN(parsedFieldId)) {
+      return NextResponse.json({ error: 'Data bidang/kategori tidak valid' }, { status: 400 })
+    }
+
+    const selectedField = await prisma.field.findUnique({
+      where: { id: parsedFieldId },
+      select: { categoryId: true }
+    })
+
+    if (!selectedField || selectedField.categoryId !== parsedCategoryId) {
+      return NextResponse.json({ error: 'Kategori tidak sesuai dengan bidang yang dipilih' }, { status: 400 })
+    }
+
     const created = await prisma.competition.create({
       data: {
         title,
         organizer,
-        categoryId: parseInt(categoryId),
-        fieldId: parseInt(fieldId),
+        categoryId: parsedCategoryId,
+        fieldId: parsedFieldId,
         createdBy: adminId,
         level: level || 'nasional',
         type: type || 'solo',

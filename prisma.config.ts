@@ -7,6 +7,9 @@ export default defineConfig({
   datasource: {
     url: 'file:./prisma/dev.db',
   },
+  migrations: {
+    seed: 'npx tsx prisma/seed.ts',
+  },
   migrate: {
     async adapter() {
       const { default: Database } = await import('better-sqlite3')

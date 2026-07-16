@@ -269,14 +269,14 @@ export function AdminCompetitionsClient({
     c.organizer.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Dynamic Categories Filtering
-  const filteredCategoriesForAdd = selectedFieldId
-    ? categories.filter(c => String(c.id) === String(fields.find(f => String(f.id) === String(selectedFieldId))?.categoryId))
-    : categories
+  // Dynamic field filtering based on selected broad field/category
+  const filteredFieldsForAdd = selectedCatId
+    ? fields.filter(f => String(f.categoryId) === String(selectedCatId))
+    : fields
 
-  const filteredCategoriesForEdit = editFieldId
-    ? categories.filter(c => String(c.id) === String(fields.find(f => String(f.id) === String(editFieldId))?.categoryId))
-    : categories
+  const filteredFieldsForEdit = editCatId
+    ? fields.filter(f => String(f.categoryId) === String(editCatId))
+    : fields
 
   return (
     <div className="animate-fade-in">
@@ -402,24 +402,29 @@ export function AdminCompetitionsClient({
               <label className="form-label">Bidang Lomba</label>
               <select
                 className="form-select"
-                value={selectedFieldId}
+                value={selectedCatId}
                 onChange={(e) => {
-                  const fId = e.target.value;
-                  setSelectedFieldId(fId);
-                  const parentCatId = fields.find(f => String(f.id) === String(fId))?.categoryId;
-                  setSelectedCatId(parentCatId ? String(parentCatId) : '');
+                  const catId = e.target.value
+                  setSelectedCatId(catId)
+                  setSelectedFieldId('')
                 }}
                 required
               >
                 <option value="">Pilih Bidang...</option>
-                {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Kategori Lomba</label>
-              <select className="form-select" value={selectedCatId} onChange={(e) => setSelectedCatId(e.target.value)} required>
+              <select
+                className="form-select"
+                value={selectedFieldId}
+                onChange={(e) => setSelectedFieldId(e.target.value)}
+                required
+                disabled={!selectedCatId}
+              >
                 <option value="">Pilih Kategori...</option>
-                {filteredCategoriesForAdd.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {filteredFieldsForAdd.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
           </div>
@@ -603,24 +608,29 @@ export function AdminCompetitionsClient({
               <label className="form-label">Bidang Lomba</label>
               <select
                 className="form-select"
-                value={editFieldId}
+                value={editCatId}
                 onChange={(e) => {
-                  const fId = e.target.value;
-                  setEditFieldId(fId);
-                  const parentCatId = fields.find(f => String(f.id) === String(fId))?.categoryId;
-                  setEditCatId(parentCatId ? String(parentCatId) : '');
+                  const catId = e.target.value
+                  setEditCatId(catId)
+                  setEditFieldId('')
                 }}
                 required
               >
                 <option value="">Pilih Bidang...</option>
-                {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Kategori Lomba</label>
-              <select className="form-select" value={editCatId} onChange={(e) => setEditCatId(e.target.value)} required>
+              <select
+                className="form-select"
+                value={editFieldId}
+                onChange={(e) => setEditFieldId(e.target.value)}
+                required
+                disabled={!editCatId}
+              >
                 <option value="">Pilih Kategori...</option>
-                {filteredCategoriesForEdit.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {filteredFieldsForEdit.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
           </div>

@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import logoImg from './logo.png'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -42,12 +44,18 @@ export default function LoginPage() {
       {/* Left Panel */}
       <div className="auth-left">
         <div className="auth-left-content">
-          <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🏆</div>
-          <h1>PUSTASDA</h1>
+          <div style={{ maxWidth: '400px', margin: '0 auto 24px auto' }}>
+            <Image 
+              src={logoImg} 
+              alt="Logo Pustasda" 
+              priority
+              style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+            />
+          </div>
           <p>
-            Pusat Prestasi SMK Telkom Sidoarjo — Platform digital untuk mengelola,
-            memantau, dan meraih prestasi lomba tingkat sekolah hingga internasional.
-          </p>
+            Pusat Prestasi SMK Telkom Sidoarjo.<br />
+            Platform digital untuk mengelola, memantau, dan mendukung pencapaian prestasi dari tingkat sekolah hingga internasional.
+            </p>
           <div style={{
             marginTop: '32px',
             display: 'flex',
@@ -66,7 +74,7 @@ export default function LoginPage() {
       {/* Right Panel - Login Form */}
       <div className="auth-right">
         <div className="auth-form-box">
-          <h2 className="auth-form-title">Selamat Datang 👋</h2>
+          <h2 className="auth-form-title">Selamat Datang</h2>
           <p className="auth-form-subtitle">
             Masuk ke akun PUSTASDA Anda untuk melanjutkan
           </p>

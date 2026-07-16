@@ -7,141 +7,201 @@ const dbPath = path.join(__dirname, 'dev.db')
 const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
 const prisma = new PrismaClient({ adapter } as any)
 
+function email(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.') + '@pustasda.com'
+}
+
+const defaultPass = hashSync('password', 10)
+
 async function main() {
   console.log('🌱 Seeding database...')
 
   // ============================================================
-  // USERS (Admin, Developer, Guru, Siswa)
+  // CLEAN: Hapus semua data kecuali admin & developer
   // ============================================================
-  const users = [
+  console.log(' 🗑️  Cleaning...')
+  await prisma.mentorshipActivity.deleteMany()
+  await prisma.mentorship.deleteMany()
+  await prisma.participationStep.deleteMany()
+  await prisma.participation.deleteMany()
+  await prisma.teamMember.deleteMany()
+  await prisma.team.deleteMany()
+  await prisma.competitionSave.deleteMany()
+  await prisma.saveFolder.deleteMany()
+  await prisma.competitionStage.deleteMany()
+  await prisma.competition.deleteMany()
+  await prisma.notification.deleteMany()
+  await prisma.userBadge.deleteMany()
+  await prisma.badge.deleteMany()
+  await prisma.activityLog.deleteMany()
+  await prisma.session.deleteMany()
+  await prisma.passwordResetToken.deleteMany()
+  await prisma.studentProfile.deleteMany()
+  await prisma.teacherProfile.deleteMany()
+  await prisma.user.deleteMany({ where: { role: { notIn: ['admin', 'developer'] } } })
+  await prisma.field.deleteMany()
+  await prisma.category.deleteMany()
+  await prisma.appSetting.deleteMany()
+
+  // ============================================================
+  // 10 BIDANG (Categories) — masing-masing 10 Kategori (Fields)
+  // ============================================================
+  console.log(' 📂 Creating 10 bidang + 100 kategori...')
+
+  const bidangData = [
     {
-      name: 'Administrator',
-      email: 'admin@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'admin',
-      photo: 'default-avatar.png',
+      name: 'Teknologi Informasi', icon: 'fa-microchip', color: '#2196F3',
+      fields: ['Pemrograman Web', 'Pemrograman Mobile', 'Jaringan Komputer', 'Basis Data', 'Keamanan Siber', 'Cloud Computing', 'Kecerdasan Buatan', 'Internet of Things', 'Sistem Operasi', 'DevOps'],
     },
     {
-      name: 'Developer',
-      email: 'dev@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'developer',
-      photo: 'default-avatar.png',
+      name: 'Sains & Matematika', icon: 'fa-flask', color: '#4CAF50',
+      fields: ['Fisika', 'Kimia', 'Biologi', 'Matematika', 'Statistika', 'Astronomi', 'Lingkungan Hidup', 'Klimatologi', 'Nanoteknologi', 'Genetika'],
     },
     {
-      name: 'Guru Pembimbing',
-      email: 'guru@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'teacher',
-      photo: 'default-avatar.png',
-      waNumber: '6281234567890',
+      name: 'Bahasa & Komunikasi', icon: 'fa-comments', color: '#FF9800',
+      fields: ['Bahasa Indonesia', 'Bahasa Inggris', 'Bahasa Jepang', 'Bahasa Mandarin', 'Bahasa Arab', 'Debat', 'Pidato', 'Jurnalistik', 'Penulisan Kreatif', 'Penerjemahan'],
     },
     {
-      name: 'Siswa',
-      email: 'siswa@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'student',
-      photo: 'default-avatar.png',
+      name: 'Seni & Budaya', icon: 'fa-palette', color: '#9C27B0',
+      fields: ['Musik', 'Tari', 'Teater', 'Seni Rupa', 'Seni Lukis', 'Seni Patung', 'Fotografi', 'Sinematografi', 'Desain Grafis', 'Kriya'],
     },
     {
-      name: 'Ahmad Rizky',
-      email: 'ahmad@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'student',
-      photo: 'default-avatar.png',
+      name: 'Olahraga & Kesehatan', icon: 'fa-heartbeat', color: '#F44336',
+      fields: ['Futsal', 'Basket', 'Voli', 'Bulu Tangkis', 'Atletik', 'Renang', 'Catur', 'Taekwondo', 'Pencak Silat', 'Kesehatan'],
     },
     {
-      name: 'Siti Nurhaliza',
-      email: 'siti@pustasda.com',
-      password: hashSync('password', 10),
-      role: 'student',
-      photo: 'default-avatar.png',
+      name: 'Bisnis & Kewirausahaan', icon: 'fa-briefcase', color: '#607D8B',
+      fields: ['Business Plan', 'Marketing', 'E-Commerce', 'Keuangan', 'Manajemen', 'Kewirausahaan', 'Investasi', 'Akuntansi', 'Perpajakan', 'Logistik'],
+    },
+    {
+      name: 'Teknik & Rekayasa', icon: 'fa-gears', color: '#795548',
+      fields: ['Teknik Elektro', 'Teknik Mesin', 'Teknik Sipil', 'Robotika', 'Otomotif', 'Refrigerasi', 'PLC', 'CAD/CAM', 'Material', 'Energi Terbarukan'],
+    },
+    {
+      name: 'Desain & Multimedia', icon: 'fa-pen-ruler', color: '#E91E63',
+      fields: ['UI/UX Design', 'Video Editing', 'Animasi 3D', 'Motion Graphics', 'Game Design', 'Web Design', 'Branding', 'Photography', 'Illustration', '3D Modeling'],
+    },
+    {
+      name: 'Sosial & Kemanusiaan', icon: 'fa-people-group', color: '#00BCD4',
+      fields: ['Sosiologi', 'Psikologi', 'Hukum', 'Hubungan Internasional', 'Pemerintahan', 'Lingkungan Sosial', 'Filantropi', 'Pendidikan', 'Kesehatan Masyarakat', 'Kebencanaan'],
+    },
+    {
+      name: 'Agama & Keagamaan', icon: 'fa-book-quran', color: '#8BC34A',
+      fields: ['Tafsir Al-Quran', 'Hadits', 'Fiqih', 'Akidah', 'Dakwah', 'Kristologi', 'Teologi', 'Kitab Suci', 'Moral & Etika', 'Religi & Budaya'],
     },
   ]
 
-  for (const user of users) {
-    const created = await prisma.user.upsert({
-      where: { email: user.email },
-      update: {},
-      create: user,
-    })
-    console.log(`  ✓ User: ${created.name} (${created.role})`)
-
-    // Create profile for students
-    if (created.role === 'student') {
-      await prisma.studentProfile.upsert({
-        where: { userId: created.id },
-        update: {},
-        create: {
-          userId: created.id,
-          nis: `2026${String(created.id).padStart(4, '0')}`,
-          kelas: 'XII SIJA/TJAT',
-          jurusan: 'Rekayasa Perangkat Lunak',
-          angkatan: '2024',
-        },
-      })
-    }
-
-    // Create profile for teachers
-    if (created.role === 'teacher') {
-      await prisma.teacherProfile.upsert({
-        where: { userId: created.id },
-        update: {},
-        create: {
-          userId: created.id,
-          nip: '198501012010011001',
-          bidangKeahlian: 'Teknologi Informasi',
-          jabatan: 'Guru Produktif',
-        },
-      })
+  const categoryIds: number[] = []
+  for (const b of bidangData) {
+    const cat = await prisma.category.create({ data: { name: b.name, icon: b.icon, color: b.color } })
+    categoryIds.push(cat.id)
+    for (const f of b.fields) {
+      await prisma.field.create({ data: { categoryId: cat.id, name: f } })
     }
   }
+  console.log(`  ✓ ${categoryIds.length} bidang, ${categoryIds.length * 10} kategori`)
 
   // ============================================================
-  // CATEGORIES
+  // SISWA
   // ============================================================
-  const categories = [
-    { name: 'Olimpiade', icon: 'fa-brain', color: '#e31e25' },
-    { name: 'Hackathon', icon: 'fa-laptop-code', color: '#2196F3' },
-    { name: 'Debat', icon: 'fa-comments', color: '#FF9800' },
-    { name: 'Karya Tulis', icon: 'fa-pen-fancy', color: '#4CAF50' },
-    { name: 'Seni & Kreativitas', icon: 'fa-palette', color: '#9C27B0' },
-    { name: 'Olahraga', icon: 'fa-futbol', color: '#FF5722' },
-    { name: 'Bisnis & Kewirausahaan', icon: 'fa-briefcase', color: '#607D8B' },
-    { name: 'Robotik & IoT', icon: 'fa-robot', color: '#00BCD4' },
+  console.log(' 🎓 Creating students...')
+
+  const siswa1 = [
+    'Abdan Muhammad Izzan Rasyadan', 'Acika Putri', 'Alghazaly Ibhram Santoso',
+    'Amadeus Xavier Enoch', 'Andika Asyam Ishaq Nur Arrasyid', 'Antori Yusuf Satriani',
+    'Atha Fakhri Arkana', 'Aura Luthfia Annisa', 'Ayska Eveline Ikbar',
+    'Brahma Alfaris Reyraharjo', 'Ershon Juan Pelamonia', 'Evan Satria Mahardika',
+    'Fawwaz Aryo Setiawan', 'Ghulam Nawwaf', 'Jahfal Azhar',
+    'Muchammad Rizqullah Izzatul Ibad', 'Muhammad Afgan Gahzy', 'Muhammad Faishal',
+    'Muhammad Fardan', 'Muhammad Pandji Ar-Rizky Munib', 'Muhammad Tezar Akbarsyah',
+    'Nabil Aswangga Hugobama', 'Nathaviela Thalita Kirana', 'Qaedi Razan Imawan',
+    'Radhiyya Alea Akbar', 'Raffi Setiawan Putra', 'Rahmad Haris Abdillah',
+    'Sandya Hafiduddin Faristyo', 'Saqa Pandega Adha Dananjaya',
+    'Syarivatun Nisa\'i Nur Aulia', 'Tyara Angel Charlisa',
   ]
 
-  for (const cat of categories) {
-    await prisma.category.upsert({
-      where: { id: categories.indexOf(cat) + 1 },
-      update: {},
-      create: cat,
-    })
-  }
-  console.log(`  ✓ ${categories.length} categories created`)
-
-  // ============================================================
-  // FIELDS
-  // ============================================================
-  const fields = [
-    { name: 'Teknologi Informasi', icon: 'fa-microchip', categoryId: 2 },
-    { name: 'Sains & Matematika', icon: 'fa-flask', categoryId: 1 },
-    { name: 'Bahasa & Sastra', icon: 'fa-book', categoryId: 3 },
-    { name: 'Ekonomi & Bisnis', icon: 'fa-chart-line', categoryId: 7 },
-    { name: 'Seni & Budaya', icon: 'fa-masks-theater', categoryId: 5 },
-    { name: 'Teknik & Rekayasa', icon: 'fa-gears', categoryId: 8 },
-    { name: 'Kesehatan & Lingkungan', icon: 'fa-leaf', categoryId: 6 },
-    { name: 'Desain & Multimedia', icon: 'fa-pen-ruler', categoryId: 5 },
+  const siswa2 = [
+    'Aisyah Gadis Safira', 'Aliezzar Wijaya', 'Atha Raditya Primaldi',
+    'Aulia Dewi Maharani', 'Aurora Yulia Safa', 'Denise Wahyu Saputra',
+    'Dhafin Kautsar Alif Rahmat Putra', 'Elizabeth Anggun Lejartiastuti',
+    'Enrico Arianto', 'Fathizzat Abida Rasyadhani', 'Firman Dwi Nugraha',
+    'Ghefarah Arkhanza Nurwanda', 'Helmy Asyraf Risqi Ariebowo',
+    'Hikmawal Anugrah Dzachwan', 'Irsyad Falah Maulana Pranoto',
+    'Kevin Daniswara Raditya', 'Khanza Dyas Ramadhani',
+    'Mohammad Nabil Bagas Adinata', 'Mohammad Tsaqib Syams Shaqr',
+    'Muhamad Bari Jauhar Falahi', 'Muhammad Daffa Ronalvianto Pratama',
+    'Muhammad Ghofar Jalesa Widandy', 'Muhammad Kukuh Fauzy Prasetyadi',
+    'Muhammad Naufal Rafa Al As\'ad', 'Muhammad Yusron Fauzi',
+    'Naadhim Fahly Mubaarok', 'Nayla Sufiatuz Zahro', 'Putri Shafira Madya',
+    'Raka Febrian Ardi Pratama', 'Razzan Brilliant Nafis', 'Rifqi Tomy Alana',
+    'Vega Fadan Putra',
   ]
 
-  for (const field of fields) {
-    await prisma.field.upsert({
-      where: { id: fields.indexOf(field) + 1 },
-      update: { categoryId: field.categoryId },
-      create: field,
+  let nisCounter = 1
+  for (const name of siswa1) {
+    const user = await prisma.user.create({
+      data: { name, email: email(name), password: defaultPass, role: 'student', photo: 'default-avatar.png' },
+    })
+    await prisma.studentProfile.create({
+      data: { userId: user.id, nis: `2024${String(nisCounter++).padStart(3, '0')}`, kelas: 'XII SIJA 1', jurusan: 'Sistem Informasi Jaringan dan Aplikasi', angkatan: '2024' },
     })
   }
-  console.log(`  ✓ ${fields.length} fields created`)
+
+  for (const name of siswa2) {
+    const user = await prisma.user.create({
+      data: { name, email: email(name), password: defaultPass, role: 'student', photo: 'default-avatar.png' },
+    })
+    await prisma.studentProfile.create({
+      data: { userId: user.id, nis: `2024${String(nisCounter++).padStart(3, '0')}`, kelas: 'XII SIJA 2', jurusan: 'Sistem Informasi Jaringan dan Aplikasi', angkatan: '2024' },
+    })
+  }
+  console.log(`  ✓ ${siswa1.length + siswa2.length} siswa`)
+
+  // ============================================================
+  // GURU
+  // ============================================================
+  console.log(' 👨‍🏫 Creating teachers...')
+
+  const guruData = [
+    { name: 'Achmad Rifa\'i', jabatan: 'Wakil Kepala Sekolah Bidang Laboratorium IT dan Sarpra', bidang: 'Teknologi Informasi' },
+    { name: 'Eka Prasetia P. Iswardiani', jabatan: 'Wakil Kepala Sekolah Bidang Hubungan Industri', bidang: 'Bisnis & Kewirausahaan' },
+    { name: 'Maulana Al Ghofiqi', jabatan: 'Wakil Kepala Sekolah Bidang Kesiswaan', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Sigit Eka Prayoga', jabatan: 'Tata Usaha', bidang: 'Bisnis & Kewirausahaan' },
+    { name: 'Amir Hamka', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
+    { name: 'Arganata Dian Amrullah', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Chintia Trinanda Wijaya', jabatan: 'Guru Pendidikan Olahraga', bidang: 'Olahraga & Kesehatan' },
+    { name: 'David Wahyu Pratomo', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Deyan Suprayogi', jabatan: 'Guru Bimbingan Konseling dan Karakter', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Eliza Tyas Damayanti', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Ferina Kumala Dewi', jabatan: 'Guru Bahasa Inggris', bidang: 'Bahasa & Komunikasi' },
+    { name: 'Galuh Rahmawati', jabatan: 'Guru Proyek IPAS dan Informatika', bidang: 'Sains & Matematika' },
+    { name: 'Guruh Mayonk Firmansyah', jabatan: 'Guru Bimbingan Konseling dan Karakter', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Hadi Triyono', jabatan: 'Guru Pendidikan Agama Kristen dan Budi Pekerti', bidang: 'Agama & Keagamaan' },
+    { name: 'Ika Zuliana', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Ike Yuliastuti', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Ilham Okta Alpriansyah', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Indra Hadi Pranata', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Lailatun Nikmah', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
+    { name: 'Lia Indriawati', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
+    { name: 'M. Adam Nuh Ibrahim', jabatan: 'Guru Sejarah dan Pendidikan Pancasila', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Mohammad Suhud Abdillah', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Mokhammad Misbakhul Abid', jabatan: 'Guru Matematika', bidang: 'Sains & Matematika' },
+    { name: 'Muhammad Adi Riswanto', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
+    { name: 'Muhammad Syaiful Ulum', jabatan: 'Guru Pendidikan Olahraga', bidang: 'Olahraga & Kesehatan' },
+    { name: 'Nadya Arian Kusuma Wardani', jabatan: 'Guru Sejarah dan Pendidikan Pancasila', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Nafta Rahma', jabatan: 'Guru Bahasa Indonesia', bidang: 'Bahasa & Komunikasi' },
+  ]
+
+  let nipCounter = 1
+  for (const g of guruData) {
+    const user = await prisma.user.create({
+      data: { name: g.name, email: email(g.name), password: defaultPass, role: 'teacher', photo: 'default-avatar.png' },
+    })
+    await prisma.teacherProfile.create({
+      data: { userId: user.id, nip: `1985010120100${String(nipCounter++).padStart(3, '0')}`, bidangKeahlian: g.bidang, jabatan: g.jabatan },
+    })
+  }
+  console.log(`  ✓ ${guruData.length} guru`)
 
   // ============================================================
   // BADGES
@@ -154,15 +214,10 @@ async function main() {
     { name: 'Raja Lomba', description: 'Menang 5 kali', icon: 'fa-crown', color: '#e31e25', conditionType: 'total_win', conditionValue: 5 },
     { name: 'Tim Player', description: 'Bergabung dengan 3 tim', icon: 'fa-users', color: '#2196F3', conditionType: 'total_team', conditionValue: 3 },
   ]
-
   for (const badge of badges) {
-    await prisma.badge.upsert({
-      where: { id: badges.indexOf(badge) + 1 },
-      update: {},
-      create: badge,
-    })
+    await prisma.badge.create({ data: badge })
   }
-  console.log(`  ✓ ${badges.length} badges created`)
+  console.log(`  ✓ ${badges.length} badges`)
 
   // ============================================================
   // APP SETTINGS
@@ -180,189 +235,14 @@ async function main() {
     { key: 'whatsapp_enabled', value: 'false', group: 'features' },
     { key: 'maintenance_mode', value: 'false', group: 'system' },
   ]
-
-  for (const setting of settings) {
-    await prisma.appSetting.upsert({
-      where: { key: setting.key },
-      update: {},
-      create: setting,
-    })
+  for (const s of settings) {
+    await prisma.appSetting.create({ data: s })
   }
-  console.log(`  ✓ ${settings.length} app settings created`)
-
-  // ============================================================
-  // SAMPLE COMPETITIONS
-  // ============================================================
-  const admin = await prisma.user.findFirst({ where: { role: 'admin' } })
-  if (admin) {
-    const competitions = [
-      {
-        categoryId: 1, fieldId: 1, createdBy: admin.id,
-        title: 'Olimpiade Sains Nasional (OSN) Informatika 2026',
-        organizer: 'Kemendikbudristek',
-        level: 'nasional', type: 'solo',
-        description: 'Kompetisi sains tingkat nasional bidang informatika untuk siswa SMA/SMK se-Indonesia. Tahun 2026 mengangkat tema "Inovasi Digital untuk Indonesia Maju".',
-        requirements: 'Siswa aktif SMA/SMK, telah lolos seleksi tingkat kabupaten/kota',
-        deadline: new Date('2026-09-15'),
-        registerDeadline: new Date('2026-08-01'),
-        announcementDate: new Date('2026-10-30'),
-        isTrending: true,
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 2, fieldId: 1, createdBy: admin.id,
-        title: 'Google Code Jam Junior 2026',
-        organizer: 'Google',
-        level: 'internasional', type: 'solo',
-        description: 'Kompetisi pemrograman global untuk pelajar di bawah 18 tahun. Selesaikan tantangan algoritmik dalam batas waktu tertentu.',
-        requirements: 'Usia dibawah 18 tahun, memiliki akun Google',
-        linkRegistration: 'https://codejam.withgoogle.com',
-        deadline: new Date('2026-08-20'),
-        registerDeadline: new Date('2026-07-30'),
-        isTrending: true,
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 2, fieldId: 1, createdBy: admin.id,
-        title: 'Hackathon Merdeka Belajar 2026',
-        organizer: 'Kemendikbudristek x Dicoding',
-        level: 'nasional', type: 'team',
-        maxMembers: 4, minMembers: 2,
-        description: 'Hackathon nasional untuk mengembangkan solusi teknologi pendidikan. Tim terdiri dari 2-4 orang siswa SMA/SMK.',
-        requirements: 'Tim 2-4 siswa, minimal 1 prototype',
-        deadline: new Date('2026-10-01'),
-        registerDeadline: new Date('2026-08-15'),
-        isTrending: true,
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 3, fieldId: 3, createdBy: admin.id,
-        title: 'Lomba Debat Bahasa Inggris Tingkat Jatim',
-        organizer: 'Dinas Pendidikan Jawa Timur',
-        level: 'provinsi', type: 'team',
-        maxMembers: 3, minMembers: 3,
-        description: 'Lomba debat bahasa Inggris antar sekolah se-Jawa Timur. Setiap tim terdiri dari 3 orang.',
-        deadline: new Date('2026-08-25'),
-        registerDeadline: new Date('2026-07-25'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 4, fieldId: 3, createdBy: admin.id,
-        title: 'Lomba Karya Tulis Ilmiah Nasional',
-        organizer: 'LIPI',
-        level: 'nasional', type: 'team',
-        maxMembers: 3, minMembers: 1,
-        description: 'Kompetisi karya tulis ilmiah untuk siswa SMA/SMK se-Indonesia. Tema bebas dengan pendekatan ilmiah.',
-        deadline: new Date('2026-09-30'),
-        registerDeadline: new Date('2026-08-30'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 5, fieldId: 8, createdBy: admin.id,
-        title: 'Festival Film Pendek Pelajar 2026',
-        organizer: 'Kemendikbudristek',
-        level: 'nasional', type: 'team',
-        maxMembers: 5, minMembers: 2,
-        description: 'Festival film pendek untuk pelajar SMA/SMK. Durasi film 5-15 menit dengan tema "Generasi Emas Indonesia".',
-        deadline: new Date('2026-11-15'),
-        registerDeadline: new Date('2026-09-15'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 8, fieldId: 6, createdBy: admin.id,
-        title: 'Indonesia Robotic Competition 2026',
-        organizer: 'BRIN',
-        level: 'nasional', type: 'team',
-        maxMembers: 4, minMembers: 2,
-        description: 'Kompetisi robotik tingkat nasional. Kategori: Line Follower, Sumo Robot, dan Drone Racing.',
-        deadline: new Date('2026-10-20'),
-        registerDeadline: new Date('2026-09-01'),
-        isTrending: true,
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 1, fieldId: 2, createdBy: admin.id,
-        title: 'Olimpiade Matematika Kota Sidoarjo',
-        organizer: 'Dinas Pendidikan Kota Sidoarjo',
-        level: 'kota', type: 'solo',
-        description: 'Olimpiade matematika tingkat kota untuk siswa SMA/SMK se-Kota Sidoarjo.',
-        deadline: new Date('2026-08-10'),
-        registerDeadline: new Date('2026-07-20'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 7, fieldId: 4, createdBy: admin.id,
-        title: 'Business Plan Competition 2026',
-        organizer: 'Universitas Airlangga',
-        level: 'nasional', type: 'team',
-        maxMembers: 3, minMembers: 2,
-        description: 'Kompetisi rencana bisnis untuk siswa SMA/SMK. Presentasikan ide bisnis inovatif Anda.',
-        deadline: new Date('2026-09-25'),
-        registerDeadline: new Date('2026-08-20'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 2, fieldId: 8, createdBy: admin.id,
-        title: 'UI/UX Design Challenge - Telkom',
-        organizer: 'Telkom Indonesia',
-        level: 'nasional', type: 'solo',
-        description: 'Tantangan desain UI/UX untuk membuat prototype aplikasi mobile. Tema: Smart City Solutions.',
-        deadline: new Date('2026-08-30'),
-        registerDeadline: new Date('2026-07-30'),
-        isTrending: true,
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 6, fieldId: 5, createdBy: admin.id,
-        title: 'Kompetisi E-Sport Antar Sekolah Sidoarjo',
-        organizer: 'OSIS SMK Telkom Sidoarjo',
-        level: 'sekolah', type: 'team',
-        maxMembers: 5, minMembers: 5,
-        description: 'Turnamen e-sport antar kelas/sekolah. Game: Mobile Legends dan Valorant.',
-        deadline: new Date('2026-08-05'),
-        registerDeadline: new Date('2026-07-25'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-      {
-        categoryId: 5, fieldId: 5, createdBy: admin.id,
-        title: 'Lomba Paduan Suara Nasional',
-        organizer: 'Kementerian Pariwisata',
-        level: 'nasional', type: 'team',
-        maxMembers: 30, minMembers: 10,
-        description: 'Lomba paduan suara tingkat nasional untuk kelompok pelajar SMA/SMK.',
-        deadline: new Date('2026-11-01'),
-        registerDeadline: new Date('2026-09-30'),
-        isActive: true,
-        verificationStatus: 'approved',
-      },
-    ]
-
-    for (const comp of competitions) {
-      await prisma.competition.create({ data: comp })
-    }
-    console.log(`  ✓ ${competitions.length} sample competitions created`)
-  }
+  console.log(`  ✓ ${settings.length} app settings`)
 
   console.log('\n✅ Seeding complete!')
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+  .then(async () => { await prisma.$disconnect() })
+  .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1) })
