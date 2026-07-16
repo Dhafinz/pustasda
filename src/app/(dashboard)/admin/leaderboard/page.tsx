@@ -98,8 +98,12 @@ export default async function AdminLeaderboardPage() {
                   </td>
                   <td>
                     <div className="leaderboard-student">
-                      <div className="leaderboard-student-avatar" style={idx < 3 ? { background: 'var(--red)' } : { background: 'var(--gray)' }}>
-                        {item.name.charAt(0)}
+                      <div className="leaderboard-student-avatar" style={{ background: idx < 3 ? 'var(--red)' : 'var(--gray)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {item.photo && item.photo !== 'default-avatar.png' && item.photo !== 'default_avatar.png' ? (
+                          <img src={item.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          item.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                        )}
                       </div>
                       <div>
                         <div className="leaderboard-student-name" style={{ fontSize: '0.82rem', fontWeight: 700 }}>

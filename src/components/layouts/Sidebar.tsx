@@ -17,25 +17,32 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
 
   const displayRole = role === 'student' ? 'Siswa' :
     role === 'teacher' ? 'Guru' :
-    role === 'developer' ? 'Developer' : 'Admin'
+      role === 'developer' ? 'Developer' : 'Admin'
 
   const displaySubRole = role === 'student' ? '📚 Umum' :
     role === 'teacher' ? '📖 Guru Produktif' :
-    role === 'developer' ? '💻 Web Developer' : '🔑 Administrator'
+      role === 'developer' ? '💻 Web Developer' : '🔑 Administrator'
 
   const isActive = (path: string) => pathname === path ? 'active' : ''
   const isActivePrefix = (path: string) => pathname.startsWith(path) ? 'active' : ''
 
-  const initials = user.name?.charAt(0)?.toUpperCase() || 'U'
+  const getInitials = (name: string | null | undefined): string => {
+    if (!name) return 'U'
+    const parts = name.trim().split(/\s+/)
+    const first = parts[0]?.charAt(0) || ''
+    const second = parts[1]?.charAt(0) || ''
+    return (first + second).toUpperCase() || 'U'
+  }
+  const initials = getInitials(user.name)
 
   return (
     <aside className="sidebar">
       {/* Brand Header */}
       <div className="sidebar-header">
         {appLogo ? (
-          <img 
-            src={appLogo.startsWith('/') || appLogo.startsWith('http') ? appLogo : `/images/${appLogo}`} 
-            alt="logo" 
+          <img
+            src={appLogo.startsWith('/') || appLogo.startsWith('http') ? appLogo : `/images/${appLogo}`}
+            alt="logo"
             style={{ maxHeight: '32px', maxWidth: '32px', borderRadius: '4px', objectFit: 'contain' }}
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
@@ -228,7 +235,13 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
       {/* User Card (Bottom) */}
       <div className="sidebar-user">
         <div className="sidebar-user-card">
-          <div className="su-avatar">{initials}</div>
+          <div className="su-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {user.photo && user.photo !== 'default-avatar.png' && user.photo !== 'default_avatar.png' ? (
+              <img src={user.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initials
+            )}
+          </div>
           <div className="su-info">
             <div className="su-name">{user.name}</div>
             <div className="su-role">{displaySubRole}</div>

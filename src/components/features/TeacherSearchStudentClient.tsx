@@ -115,8 +115,12 @@ export function TeacherSearchStudentClient({ initialStudents }: { initialStudent
                     padding: '12px'
                   }}
                 >
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
-                    {student.name.charAt(0)}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', overflow: 'hidden', flexShrink: 0 }}>
+                    {student.photo && student.photo !== 'default-avatar.png' && student.photo !== 'default_avatar.png' ? (
+                      <img src={student.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      student.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                    )}
                   </div>
                   <div style={{ flex: 1 }}>
                     <strong style={{ fontSize: '0.82rem', display: 'block', color: 'var(--dark)' }}>{student.name}</strong>
@@ -148,8 +152,12 @@ export function TeacherSearchStudentClient({ initialStudents }: { initialStudent
             {selectedStudent ? (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.2rem' }}>
-                    {selectedStudent.name.charAt(0)}
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.2rem', overflow: 'hidden', flexShrink: 0 }}>
+                    {selectedStudent.photo && selectedStudent.photo !== 'default-avatar.png' && selectedStudent.photo !== 'default_avatar.png' ? (
+                      <img src={selectedStudent.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      selectedStudent.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                    )}
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>{selectedStudent.name}</h3>

@@ -39,7 +39,12 @@ export default async function AdminCompetitionsPage() {
     categoryColor: c.category.color,
     fieldName: c.field.name,
     categoryId: c.categoryId,
-    fieldId: c.fieldId
+    fieldId: c.fieldId,
+    description: c.description,
+    requirements: c.requirements,
+    linkRegistration: c.linkRegistration,
+    guidebookLink: c.guidebookLink,
+    poster: c.poster
   }))
 
   const serializedCats = categories.map((c) => ({ id: c.id, name: c.name }))

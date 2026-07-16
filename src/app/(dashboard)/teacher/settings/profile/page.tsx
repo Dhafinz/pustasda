@@ -24,6 +24,7 @@ export default async function TeacherProfileSettingsPage() {
     nip: teacher.teacherProfile?.nip || '',
     bidangKeahlian: teacher.teacherProfile?.bidangKeahlian || '',
     jabatan: teacher.teacherProfile?.jabatan || '',
+    photo: teacher.photo || '',
   }
 
   return (

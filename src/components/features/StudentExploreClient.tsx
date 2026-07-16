@@ -91,6 +91,11 @@ export function StudentExploreClient({
   // Selected Competition for Detail Panel
   const [selectedComp, setSelectedComp] = useState<CompetitionData | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [currentPosterIdx, setCurrentPosterIdx] = useState(0)
+
+  useEffect(() => {
+    setCurrentPosterIdx(0)
+  }, [selectedComp?.id])
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('')
@@ -186,9 +191,20 @@ export function StudentExploreClient({
 
         // Select the first competition of the new list by default if no active select or previous select is not in the list
         if (enriched.length > 0) {
-          const isPreviousInList = enriched.find((c: any) => c.id === selectedComp?.id)
-          if (!isPreviousInList) {
-            setSelectedComp(enriched[0])
+          const hasUrlId = searchParams.get('id')
+          if (hasUrlId) {
+            // If the URL specifies an ID, try to find it in the new list to keep details in sync
+            const matchingComp = enriched.find((c: any) => c.id === parseInt(hasUrlId))
+            if (matchingComp) {
+              setSelectedComp(matchingComp)
+            }
+            // Otherwise, do not override selectedComp (leave it to fetchCompDetail)
+          } else {
+            // Standard fallback: select first if no active select or previous select is gone
+            const isPreviousInList = enriched.find((c: any) => c.id === selectedComp?.id)
+            if (!selectedComp || !isPreviousInList) {
+              setSelectedComp(enriched[0])
+            }
           }
         } else {
           setSelectedComp(null)
@@ -532,39 +548,119 @@ export function StudentExploreClient({
               </div>
             ) : selectedComp ? (
               <div>
-                {selectedComp.poster ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                    {selectedComp.poster.split(',').map((pStr, pIdx) => {
-                      const pTrim = pStr.trim()
-                      if (!pTrim) return null
-                      const srcUrl = (pTrim.startsWith('/') || pTrim.startsWith('http')) ? pTrim : `/images/posters/${pTrim}`
-                      return (
+                {(() => {
+                  const posters = selectedComp.poster
+                    ? selectedComp.poster.split(',').map((p) => p.trim()).filter(Boolean)
+                    : [];
+                  if (posters.length > 0) {
+                    const activePoster = posters[currentPosterIdx] || posters[0];
+                    const srcUrl = (activePoster.startsWith('/') || activePoster.startsWith('http'))
+                      ? activePoster
+                      : `/images/posters/${activePoster}`;
+                    return (
+                      <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '16px', background: 'var(--gray-light)', boxShadow: 'var(--shadow-sm)' }}>
                         <img
-                          key={pIdx}
                           src={srcUrl}
-                          alt={`${selectedComp.title} poster ${pIdx + 1}`}
-                          className="detail-panel-poster"
-                          style={{ width: '100%', maxHeight: '250px', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                          alt={`${selectedComp.title} poster ${currentPosterIdx + 1}`}
+                          style={{ width: '100%', height: 'auto', maxHeight: '350px', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                         />
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div
-                    className="detail-panel-poster"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: `linear-gradient(135deg, ${selectedComp.category.color}15, ${selectedComp.category.color}30)`,
-                      fontSize: '3rem',
-                      color: selectedComp.category.color,
-                      marginBottom: '16px',
-                    }}
-                  >
-                    <i className={`fa-solid ${selectedComp.category.icon}`}></i>
-                  </div>
-                )}
+                        {posters.length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentPosterIdx((prev) => (prev === 0 ? posters.length - 1 : prev - 1));
+                              }}
+                              style={{
+                                position: 'absolute',
+                                left: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: '30px',
+                                height: '30px',
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.85)',
+                                border: 'none',
+                                boxShadow: 'var(--shadow-sm)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background 0.2s',
+                                zIndex: 10
+                              }}
+                            >
+                              <i className="fa-solid fa-chevron-left" style={{ color: 'var(--dark)', fontSize: '0.75rem' }}></i>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentPosterIdx((prev) => (prev === posters.length - 1 ? 0 : prev + 1));
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: '30px',
+                                height: '30px',
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.85)',
+                                border: 'none',
+                                boxShadow: 'var(--shadow-sm)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background 0.2s',
+                                zIndex: 10
+                              }}
+                            >
+                              <i className="fa-solid fa-chevron-right" style={{ color: 'var(--dark)', fontSize: '0.75rem' }}></i>
+                            </button>
+                            <div style={{ position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '5px', zIndex: 10 }}>
+                              {posters.map((_, dotIdx) => (
+                                <button
+                                  key={dotIdx}
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setCurrentPosterIdx(dotIdx); }}
+                                  style={{
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    padding: 0,
+                                    background: currentPosterIdx === dotIdx ? 'var(--red)' : 'rgba(255,255,255,0.5)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      className="detail-panel-poster"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: `linear-gradient(135deg, ${selectedComp.category.color}15, ${selectedComp.category.color}30)`,
+                        fontSize: '3rem',
+                        color: selectedComp.category.color,
+                        marginBottom: '16px',
+                      }}
+                    >
+                      <i className={`fa-solid ${selectedComp.category.icon}`}></i>
+                    </div>
+                  );
+                })()}
 
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '4px' }}>
                   {selectedComp.title}

@@ -100,6 +100,7 @@ export default async function StudentDashboard() {
     return {
       id: user.id,
       name: user.name,
+      photo: user.photo,
       kelas: user.studentProfile?.kelas || '-',
       jurusan: user.studentProfile?.jurusan || '-',
       poin,

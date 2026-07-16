@@ -126,8 +126,14 @@ export async function PATCH(
     // Only allow owner or team leader to change status
     const isOwner = participation.userId === userId
     const isLeader = participation.team?.leaderId === userId
-    if (!isOwner && !isLeader) {
-      return NextResponse.json({ error: 'Hanya peserta atau ketua tim yang dapat mengubah data ini' }, { status: 401 })
+    if (participation.teamId) {
+      if (!isLeader) {
+        return NextResponse.json({ error: 'Hanya ketua tim yang dapat mengubah status kelompok ini' }, { status: 401 })
+      }
+    } else {
+      if (!isOwner) {
+        return NextResponse.json({ error: 'Hanya pemilik partisipasi yang dapat mengubah data ini' }, { status: 401 })
+      }
     }
 
     let updatedStatus = participation.status

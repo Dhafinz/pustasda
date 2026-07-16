@@ -58,6 +58,7 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
   const [editExtra2, setEditExtra2] = useState('')
   const [editExtra3, setEditExtra3] = useState('')
   const [editAngkatan, setEditAngkatan] = useState('')
+  const [editPhoto, setEditPhoto] = useState<string | null>(null)
 
   // Modal: Bulk Users Upload
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
@@ -133,10 +134,68 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
     setEditRole(user.role)
     setEditActive(user.isActive)
     setEditExtra1(user.profileDetail?.nis || user.profileDetail?.nip || '')
-    setEditExtra2(user.profileDetail?.kelas || user.profileDetail?.bidangKeahlian || 'XII')
-    setEditExtra3(user.profileDetail?.jurusan || user.profileDetail?.jabatan || 'SIJA')
+
+    let rawKelas = user.profileDetail?.kelas || user.profileDetail?.bidangKeahlian || 'XII'
+    let rawJurusan = user.profileDetail?.jurusan || user.profileDetail?.jabatan || 'SIJA'
+
+    if (user.role === 'student') {
+      // Normalize Class (Kelas)
+      if (rawKelas.includes('X') || rawKelas.includes('x')) {
+        if (rawKelas.includes('XIII') || rawKelas.includes('xiii')) rawKelas = 'XIII';
+        else if (rawKelas.includes('XII') || rawKelas.includes('xii')) rawKelas = 'XII';
+        else if (rawKelas.includes('XI') || rawKelas.includes('xi')) rawKelas = 'XI';
+        else rawKelas = 'X';
+      }
+      // Normalize Major (Jurusan)
+      if (rawJurusan.toUpperCase().includes('SIJA') || rawJurusan.toUpperCase().includes('REKAYASA') || rawJurusan.toUpperCase().includes('RPL')) {
+        rawJurusan = 'SIJA';
+      } else if (rawJurusan.toUpperCase().includes('TJAT') || rawJurusan.toUpperCase().includes('JARINGAN') || rawJurusan.toUpperCase().includes('TKJ')) {
+        rawJurusan = 'TJAT';
+      }
+    }
+
+    setEditExtra2(rawKelas)
+    setEditExtra3(rawJurusan)
     setEditAngkatan(user.profileDetail?.angkatan || '2026')
+    setEditPhoto(user.photo)
     setShowPasswordEdit(false)
+  }
+
+  const handleResetPassword = async () => {
+    if (!editingUser) return
+    if (!confirm(`Reset password untuk ${editName} menjadi "password"?`)) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          email: editEmail,
+          password: 'password',
+          role: editRole,
+          isActive: editActive,
+          extra1: editExtra1,
+          extra2: editExtra2,
+          extra3: editExtra3,
+          angkatan: editRole === 'student' ? editAngkatan : undefined
+        })
+      })
+
+      if (res.ok) {
+        addToast('Kata sandi berhasil di-reset menjadi "password"!', 'success')
+        setEditingUser(null)
+        handleFetchUsers()
+        router.refresh()
+      } else {
+        const data = await res.json()
+        addToast(data.error || 'Gagal mereset kata sandi.', 'error')
+      }
+    } catch {
+      addToast('Koneksi terganggu', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -155,7 +214,8 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
           extra1: editExtra1,
           extra2: editExtra2,
           extra3: editExtra3,
-          angkatan: editRole === 'student' ? editAngkatan : undefined
+          angkatan: editRole === 'student' ? editAngkatan : undefined,
+          photo: editPhoto
         })
       })
 
@@ -205,14 +265,34 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
       const lines = bulkText.split('\n').filter(l => l.trim() !== '')
       const parsedUsers = lines.map((line) => {
         const parts = line.split(';')
+        let rawKelas = parts[5]?.trim() || 'XII'
+        let rawJurusan = parts[6]?.trim() || 'SIJA'
+        const role = parts[3]?.trim()?.toLowerCase() || 'student'
+
+        if (role === 'student') {
+          // Normalize Class (Kelas)
+          if (rawKelas.includes('X') || rawKelas.includes('x')) {
+            if (rawKelas.includes('XIII') || rawKelas.includes('xiii')) rawKelas = 'XIII';
+            else if (rawKelas.includes('XII') || rawKelas.includes('xii')) rawKelas = 'XII';
+            else if (rawKelas.includes('XI') || rawKelas.includes('xi')) rawKelas = 'XI';
+            else rawKelas = 'X';
+          }
+          // Normalize Major (Jurusan)
+          if (rawJurusan.toUpperCase().includes('SIJA') || rawJurusan.toUpperCase().includes('REKAYASA') || rawJurusan.toUpperCase().includes('RPL')) {
+            rawJurusan = 'SIJA';
+          } else if (rawJurusan.toUpperCase().includes('TJAT') || rawJurusan.toUpperCase().includes('JARINGAN') || rawJurusan.toUpperCase().includes('TKJ')) {
+            rawJurusan = 'TJAT';
+          }
+        }
+
         return {
           name: parts[0]?.trim(),
           email: parts[1]?.trim(),
           password: parts[2]?.trim() || 'password123',
-          role: parts[3]?.trim()?.toLowerCase() || 'student',
+          role: role,
           extra1: parts[4]?.trim() || '',
-          extra2: parts[5]?.trim() || 'XII SIJA TJAT',
-          extra3: parts[6]?.trim() || 'RPL',
+          extra2: rawKelas,
+          extra3: rawJurusan,
           angkatan: parts[7]?.trim() || '2026'
         }
       })
@@ -486,6 +566,34 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
             </>
           }
         >
+          {/* Profile Photo Reset block */}
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '14px', background: 'var(--gray-light)', padding: '12px', borderRadius: 'var(--radius-sm)', marginBottom: '14px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gray-dark)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--gray-mid)' }}>
+              {editPhoto && editPhoto !== 'default-avatar.png' && editPhoto !== 'default_avatar.png' ? (
+                <img src={editPhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                editName.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+              )}
+            </div>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--gray-dark)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
+                Foto Profil Pengguna
+              </span>
+              {editPhoto && editPhoto !== 'default-avatar.png' && editPhoto !== 'default_avatar.png' ? (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ padding: '2px 8px', fontSize: '0.65rem', borderColor: 'var(--red)', color: 'var(--red)', height: '22px' }}
+                  onClick={() => setEditPhoto('')}
+                >
+                  <i className="fa-solid fa-trash-can"></i> Hapus &amp; Reset Foto
+                </button>
+              ) : (
+                <span style={{ fontSize: '0.68rem', color: 'var(--gray)' }}>Menggunakan avatar inisial default</span>
+              )}
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label">Nama Lengkap</label>
             <input type="text" className="form-input" value={editName} onChange={(e) => setEditName(e.target.value)} required />
@@ -495,7 +603,18 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
             <input type="email" className="form-input" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
           </div>
           <div className="form-group">
-            <label className="form-label">Kata Sandi (Isi untuk mengganti)</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Kata Sandi (Isi untuk mengganti)</label>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={handleResetPassword}
+                style={{ padding: '2px 8px', fontSize: '0.68rem', borderColor: 'var(--red)', color: 'var(--red)', height: '22px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                disabled={loading}
+              >
+                <i className="fa-solid fa-rotate-left"></i> Reset Password
+              </button>
+            </div>
             <div style={{ position: 'relative' }}>
               <input
                 type={showPasswordEdit ? 'text' : 'password'}
@@ -612,19 +731,28 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserItem[] })
         }
       >
         <form onSubmit={handleAddBulk}>
+          <div style={{ background: 'var(--blue-light)', borderLeft: '4px solid var(--blue)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', marginBottom: '14px', lineHeight: 1.5 }}>
+            <strong style={{ color: 'var(--blue)' }}><i className="fa-solid fa-circle-info"></i> Panduan Format Bulk:</strong>
+            <ul style={{ paddingLeft: '20px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <li>Gunakan semikolon (<strong>;</strong>) sebagai pemisah data antar kolom.</li>
+              <li>Untuk <strong>Siswa (student)</strong>, data Kelas wajib ditulis singkat: <strong>X</strong>, <strong>XI</strong>, <strong>XII</strong>, atau <strong>XIII</strong>.</li>
+              <li>Untuk <strong>Siswa (student)</strong>, data Jurusan wajib ditulis singkat: <strong>SIJA</strong> atau <strong>TJAT</strong>.</li>
+              <li>Untuk <strong>Guru (teacher)</strong>, Kelas diisi Bidang Keahlian, dan Jurusan diisi Jabatan.</li>
+            </ul>
+          </div>
           <div className="form-group">
-            <label className="form-label">Format Penulisan Data (Gunakan Pemisah Semikolon ';')</label>
+            <label className="form-label">Format Penulisan Data</label>
             <textarea
               className="form-input"
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              placeholder="Contoh format per baris:&#10;Nama Siswa;email@siswa.com;pass123;student;NIS12345;XII SIJA TJAT;RPL;2026&#10;Nama Guru;email@guru.com;pass456;teacher;NIP56789;Informatika;Guru"
+              placeholder="Contoh format per baris:&#10;Budi Siswa;budi@siswa.com;pass123;student;NIS12345;XII;SIJA;2026&#10;Pak Eko Guru;eko@guru.com;pass456;teacher;NIP56789;Informatika;Guru Produktif"
               style={{ minHeight: '180px', fontFamily: 'monospace', fontSize: '0.72rem', lineHeight: 1.4 }}
               required
             />
           </div>
           <p style={{ fontSize: '0.72rem', color: 'var(--gray)', lineHeight: 1.4 }}>
-            Pastikan setiap baris data dipisahkan dengan tanda semikolon (;) sesuai format: <strong>Nama;Email;Password;Role;NIS/NIP;Kelas/Bidang;Jurusan/Jabatan;Angkatan</strong>. Email duplikat akan diabaikan secara aman.
+            Format Kolom: <strong>Nama;Email;Password;Role;NIS/NIP;Kelas/Bidang;Jurusan/Jabatan;Angkatan</strong>. Email duplikat akan dilewati.
           </p>
         </form>
       </Modal>

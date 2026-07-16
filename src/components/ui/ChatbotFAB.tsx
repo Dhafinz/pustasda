@@ -2,6 +2,46 @@
 
 import { useState } from 'react'
 
+function formatMessageContent(content: string) {
+  // 1. Split into lines
+  const lines = content.split('\n');
+  return lines.map((line, lineIdx) => {
+    // 2. Parse bold text (**bold**)
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    const elements = parts.map((part, partIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={partIdx}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    // 3. Parse list items (e.g. starting with - or * or digit.)
+    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+      const cleanLine = line.trim().slice(2);
+      const cleanParts = cleanLine.split(/(\*\*[^*]+\*\*)/g);
+      const cleanElements = cleanParts.map((part, partIdx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={partIdx}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
+      return (
+        <div key={lineIdx} style={{ display: 'flex', gap: '8px', paddingLeft: '8px', margin: '4px 0', alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '0.8rem' }}>•</span>
+          <div style={{ flex: 1 }}>{cleanElements}</div>
+        </div>
+      );
+    }
+    
+    // Otherwise return paragraph line
+    return (
+      <div key={lineIdx} style={{ minHeight: '1.2em', marginBottom: '4px' }}>
+        {elements}
+      </div>
+    );
+  });
+}
+
 export function ChatbotFAB() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Array<{ role: 'bot' | 'user'; content: string }>>([
@@ -75,7 +115,7 @@ export function ChatbotFAB() {
           <div className="chatbot-messages">
             {messages.map((msg, i) => (
               <div key={i} className={`chat-msg ${msg.role}`}>
-                {msg.content}
+                {formatMessageContent(msg.content)}
               </div>
             ))}
             {loading && (

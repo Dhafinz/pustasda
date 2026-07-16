@@ -25,6 +25,7 @@ export default async function StudentProfileSettingsPage() {
     kelas: student.studentProfile?.kelas || '',
     jurusan: student.studentProfile?.jurusan || '',
     angkatan: student.studentProfile?.angkatan || '',
+    photo: student.photo || '',
   }
 
   return (

@@ -34,6 +34,27 @@ export async function DashboardLayout({ children, user, pageTitle }: DashboardLa
   const appLogo = settings.find(s => s.key === 'app_icon')?.value || ''
   const redDark = darkenHexColor(primaryColor, 15)
 
+  // Query fresh user photo and name from DB to bypass NextAuth session caching
+  let freshPhoto = user.photo
+  let freshName = user.name
+  
+  if ((user as any).id) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: parseInt((user as any).id) },
+      select: { photo: true, name: true }
+    })
+    if (dbUser) {
+      freshPhoto = dbUser.photo
+      freshName = dbUser.name
+    }
+  }
+
+  const freshUser = {
+    ...user,
+    photo: freshPhoto,
+    name: freshName
+  }
+
   return (
     <div className="dashboard-layout">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -45,8 +66,8 @@ export async function DashboardLayout({ children, user, pageTitle }: DashboardLa
           --shadow-red: 0 4px 14px ${primaryColor}40 !important;
         }
       `}} />
-      <Sidebar user={user} appLogo={appLogo} />
-      <Navbar user={user} pageTitle={pageTitle} />
+      <Sidebar user={freshUser} appLogo={appLogo} />
+      <Navbar user={freshUser} pageTitle={pageTitle} />
       <main className="dashboard-main">
         {children}
       </main>

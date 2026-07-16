@@ -12,6 +12,7 @@ interface ProfileData {
   kelas: string
   jurusan: string
   angkatan: string
+  photo: string
 }
 
 export function StudentProfileClient({ initialData }: { initialData: ProfileData }) {
@@ -32,7 +33,8 @@ export function StudentProfileClient({ initialData }: { initialData: ProfileData
           name: formData.name,
           waNumber: formData.waNumber,
           kelas: formData.kelas,
-          jurusan: formData.jurusan
+          jurusan: formData.jurusan,
+          photo: formData.photo
         })
       })
 
@@ -63,6 +65,55 @@ export function StudentProfileClient({ initialData }: { initialData: ProfileData
 
       <div className="card">
         <form onSubmit={handleSubmit}>
+          {/* Profile Picture Upload Section */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'var(--gray-light)', padding: '16px', borderRadius: 'var(--radius)', marginBottom: '24px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--gray-dark)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--gray-mid)' }}>
+              {formData.photo && formData.photo !== 'default-avatar.png' && formData.photo !== 'default_avatar.png' ? (
+                <img src={formData.photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                formData.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Foto Profil</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', height: '28px', padding: '0 12px' }}>
+                  <i className="fa-solid fa-cloud-arrow-up"></i> Upload Foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        if (file.size > 1024 * 1024) {
+                          addToast('Ukuran file maksimal 1MB!', 'error')
+                          return
+                        }
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setFormData({ ...formData, photo: reader.result as string })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                {formData.photo && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ height: '28px', padding: '0 12px', color: 'var(--red)', borderColor: 'var(--red)' }}
+                    onClick={() => setFormData({ ...formData, photo: '' })}
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+              <span style={{ fontSize: '0.68rem', color: 'var(--gray)' }}>Format JPG/PNG/WebP, Maksimal 1MB</span>
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label">Nomor Induk Siswa (NIS)</label>
@@ -111,9 +162,10 @@ export function StudentProfileClient({ initialData }: { initialData: ProfileData
                 onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
               >
                 <option value="">Pilih Kelas...</option>
-                <option value="X SIJA TJAT">X SIJA TJAT</option>
-                <option value="XI SIJA TJAT">XI SIJA TJAT</option>
-                <option value="XII SIJA TJAT">XII SIJA TJAT</option>
+                <option value="X">X</option>
+                <option value="XI">XI</option>
+                <option value="XII">XII</option>
+                <option value="XIII">XIII</option>
               </select>
             </div>
 
@@ -125,9 +177,8 @@ export function StudentProfileClient({ initialData }: { initialData: ProfileData
                 onChange={(e) => setFormData({ ...formData, jurusan: e.target.value })}
               >
                 <option value="">Pilih Jurusan...</option>
-                <option value="Rekayasa Perangkat Lunak">Rekayasa Perangkat Lunak</option>
-                <option value="Teknik Komputer & Jaringan">Teknik Komputer & Jaringan</option>
-                <option value="Desain Komunikasi Visual">Desain Komunikasi Visual</option>
+                <option value="SIJA">SIJA</option>
+                <option value="TJAT">TJAT</option>
               </select>
             </div>
           </div>

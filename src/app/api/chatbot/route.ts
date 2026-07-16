@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,100 @@ export async function POST(request: NextRequest) {
     const name = session.user.name
     const msgLower = message.toLowerCase()
 
+    // Query active and approved competitions from the database to ground the AI's recommendations
+    const activeCompetitions = await prisma.competition.findMany({
+      where: { isActive: true, verificationStatus: 'approved' },
+      select: {
+        id: true,
+        title: true,
+        organizer: true,
+        level: true,
+        type: true,
+        minMembers: true,
+        maxMembers: true,
+        deadline: true,
+        category: { select: { name: true } },
+        field: { select: { name: true } }
+      }
+    })
+
+    const compsContext = activeCompetitions.map(c => 
+      `- [ID: ${c.id}] Lomba "${c.title}" oleh ${c.organizer} (${c.category.name} - ${c.field.name}), tingkat ${c.level}, jenis ${c.type} (min: ${c.minMembers}, max: ${c.maxMembers} orang). Deadline Pendaftaran: ${new Date(c.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    ).join('\n')
+
+    const apiKey = process.env.GEMINI_API_KEY
+
+    const systemInstructionText = `Anda adalah PUSTASDA-AI, asisten pintar untuk platform Pusat Prestasi SMK Telkom Sidoarjo (PUSTASDA).
+Tugas utama Anda adalah:
+1. Membantu pengguna (siswa, guru, admin, developer) dalam memahami dan menggunakan seluruh fitur website PUSTASDA (Leaderboard, Monitoring Bimbingan, Eksplor Lomba, Kuis Karakter AI, dsb.).
+2. Memberikan panduan, saran, bimbingan, ide kreatif, tips, materi belajar, dan inspirasi untuk berbagai bidang kompetisi/lomba (misalnya: pemrograman/coding, desain grafis, UI/UX, jaringan/TJAT, business plan, seni, e-sports, olahraga, karya ilmiah, dsb.).
+3. Membimbing siswa dalam memecahkan masalah terkait persiapan lomba, pembuatan tim, pencarian ide proyek, pemecahan masalah coding/desain dalam konteks lomba mereka, serta tips bimbingan dengan guru.
+
+GAYA KOMUNIKASI:
+- Berbicaralah dalam Bahasa Indonesia yang sangat ramah, santun, antusias, memotivasi, dan profesional.
+- Berikan penjelasan yang mendalam, terstruktur (gunakan bullet points jika membantu), taktis, dan mudah dipahami.
+- Hindari jawaban yang kaku, pendek, atau template statis. Bersikaplah seperti mentor/pembimbing yang suportif.
+- Fokuskan tanggapan Anda untuk membantu pengembangan diri siswa, prestasi akademik, dan non-akademik di SMK Telkom Sidoarjo.
+
+DATA KOMPETISI AKTIF SAAT INI (DATABASE PUSTASDA):
+${compsContext || 'Saat ini tidak ada kompetisi aktif yang terdaftar di database.'}
+
+ATURAN REKOMENDASI LOMBA:
+- Ketika pengguna menanyakan tentang saran lomba, rekomendasi lomba, atau bidang minat tertentu, Anda WAJIB menyarankan lomba dari daftar "DATA KOMPETISI AKTIF SAAT INI" di atas. Jangan mengarang atau merekomendasikan lomba fiktif yang tidak terdaftar di daftar di atas.
+- Berikan alasan mengapa lomba tersebut cocok untuk mereka (misalnya berdasarkan kategori atau bidangnya).
+- Informasikan juga kepada mereka bahwa mereka dapat mencari lomba tersebut di menu "Eksplor Lomba" di platform PUSTASDA.`
+
+    // Try calling the Gemini API first
+    try {
+      let contents = []
+      if (messages && Array.isArray(messages)) {
+        // Map messages to Gemini contents (roles: user / model)
+        contents = messages.map(msg => ({
+          role: (msg.role === 'assistant' || msg.role === 'model' || msg.role === 'bot') ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        }))
+      } else {
+        contents = [
+          {
+            role: 'user',
+            parts: [{ text: message }]
+          }
+        ]
+      }
+
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: systemInstructionText }]
+        },
+        contents,
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.7
+        }
+      }
+
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (geminiRes.ok) {
+        const data = await geminiRes.json()
+        const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
+        if (botResponse) {
+          return NextResponse.json({ response: botResponse, reply: botResponse })
+        }
+      } else {
+        console.error('Gemini API call failed with status:', geminiRes.status, await geminiRes.text())
+      }
+    } catch (apiError) {
+      console.error('Failed to request Gemini API, falling back to local handler:', apiError)
+    }
+
+    // Fallback: Local chatbot rule engine in case Gemini API is offline/fails
     let botResponse = `Halo ${name}, ada yang bisa saya bantu terkait PUSTASDA?`
 
     if (role === 'student') {
@@ -58,7 +153,7 @@ export async function POST(request: NextRequest) {
       if (msgLower.includes('warna') || msgLower.includes('icon') || msgLower.includes('tampilan')) {
         botResponse = 'Developer dapat memodifikasi warna utama website dan nama file logo aplikasi pada database melalui menu "Pengaturan App". Perubahan ini disimpan secara persisten di tabel app_settings.'
       } else if (msgLower.includes('bug') || msgLower.includes('fix') || msgLower.includes('error')) {
-        botResponse = 'Gunakan menu "Bug Analysis" untuk mendeteksi kegagalan modul runtime yang disimulasikan dan melihat rekomendasi solusi fix secara otomatis dari AI.'
+        botResponse = 'Gunakan menu "Bug Analysis" untuk dekteksi kegagalan modul runtime yang disimulasikan dan melihat rekomendasi solusi fix secara otomatis dari AI.'
       } else {
         botResponse = `Halo Developer ${name}, saya asisten AI PUSTASDA. Anda bisa bertanya tentang: Mengganti warna utama web, mengganti icon aplikasi pada database, atau analisis bug runtime.`
       }

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { hashSync } from 'bcryptjs'
 import path from 'path'
+import fs from 'fs'
 
 const dbPath = path.join(__dirname, 'dev.db')
 const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
@@ -15,6 +16,18 @@ const defaultPass = hashSync('password', 10)
 
 async function main() {
   console.log('🌱 Seeding database...')
+
+  // Check if active custom pack seeder exists
+  let customPack: any = null
+  const activePath = path.join(process.cwd(), 'prisma', 'seeder_active.json')
+  if (fs.existsSync(activePath)) {
+    try {
+      customPack = JSON.parse(fs.readFileSync(activePath, 'utf-8'))
+      console.log(`💡 Custom Seeder Pack Detected: ${customPack.name}`)
+    } catch (e) {
+      console.error('Failed to read custom active seeder pack:', e)
+    }
+  }
 
   // ============================================================
   // CLEAN: Hapus semua data kecuali admin & developer
@@ -44,11 +57,11 @@ async function main() {
   await prisma.appSetting.deleteMany()
 
   // ============================================================
-  // 10 BIDANG (Categories) — masing-masing 10 Kategori (Fields)
+  // BIDANG (Categories) & KATEGORI (Fields)
   // ============================================================
-  console.log(' 📂 Creating 10 bidang + 100 kategori...')
+  console.log(' 📂 Creating bidang + kategori...')
 
-  const bidangData = [
+  const defaultBidang = [
     {
       name: 'Teknologi Informasi', icon: 'fa-microchip', color: '#2196F3',
       fields: ['Pemrograman Web', 'Pemrograman Mobile', 'Jaringan Komputer', 'Basis Data', 'Keamanan Siber', 'Cloud Computing', 'Kecerdasan Buatan', 'Internet of Things', 'Sistem Operasi', 'DevOps'],
@@ -91,22 +104,23 @@ async function main() {
     },
   ]
 
+  const bidangData = customPack?.bidang || defaultBidang
   const categoryIds: number[] = []
   for (const b of bidangData) {
-    const cat = await prisma.category.create({ data: { name: b.name, icon: b.icon, color: b.color } })
+    const cat = await prisma.category.create({ data: { name: b.name, icon: b.icon || 'fa-trophy', color: b.color || '#e31e25' } })
     categoryIds.push(cat.id)
     for (const f of b.fields) {
       await prisma.field.create({ data: { categoryId: cat.id, name: f } })
     }
   }
-  console.log(`  ✓ ${categoryIds.length} bidang, ${categoryIds.length * 10} kategori`)
+  console.log(`  ✓ Seeding ${categoryIds.length} bidang`)
 
   // ============================================================
-  // SISWA
+  // SISWA (Students)
   // ============================================================
   console.log(' 🎓 Creating students...')
 
-  const siswa1 = [
+  const defaultSiswa = [
     'Abdan Muhammad Izzan Rasyadan', 'Acika Putri', 'Alghazaly Ibhram Santoso',
     'Amadeus Xavier Enoch', 'Andika Asyam Ishaq Nur Arrasyid', 'Antori Yusuf Satriani',
     'Atha Fakhri Arkana', 'Aura Luthfia Annisa', 'Ayska Eveline Ikbar',
@@ -118,9 +132,6 @@ async function main() {
     'Radhiyya Alea Akbar', 'Raffi Setiawan Putra', 'Rahmad Haris Abdillah',
     'Sandya Hafiduddin Faristyo', 'Saqa Pandega Adha Dananjaya',
     'Syarivatun Nisa\'i Nur Aulia', 'Tyara Angel Charlisa',
-  ]
-
-  const siswa2 = [
     'Aisyah Gadis Safira', 'Aliezzar Wijaya', 'Atha Raditya Primaldi',
     'Aulia Dewi Maharani', 'Aurora Yulia Safa', 'Denise Wahyu Saputra',
     'Dhafin Kautsar Alif Rahmat Putra', 'Elizabeth Anggun Lejartiastuti',
@@ -134,37 +145,43 @@ async function main() {
     'Muhammad Naufal Rafa Al As\'ad', 'Muhammad Yusron Fauzi',
     'Naadhim Fahly Mubaarok', 'Nayla Sufiatuz Zahro', 'Putri Shafira Madya',
     'Raka Febrian Ardi Pratama', 'Razzan Brilliant Nafis', 'Rifqi Tomy Alana',
-    'Vega Fadan Putra',
+    'Vega Fadan Putra'
   ]
 
-  let nisCounter = 1
-  for (const name of siswa1) {
-    const user = await prisma.user.create({
-      data: { name, email: email(name), password: defaultPass, role: 'student', photo: 'default-avatar.png' },
-    })
-    await prisma.studentProfile.create({
-      data: { userId: user.id, nis: `2024${String(nisCounter++).padStart(3, '0')}`, kelas: 'XII SIJA 1', jurusan: 'Sistem Informasi Jaringan dan Aplikasi', angkatan: '2024' },
-    })
-  }
+  const siswaList = customPack?.siswa || defaultSiswa
+  const validKelas = ['X', 'XI', 'XII', 'XIII']
+  const validJurusan = ['SIJA', 'TJAT']
 
-  for (const name of siswa2) {
+  let nisCounter = 1
+  for (const name of siswaList) {
     const user = await prisma.user.create({
       data: { name, email: email(name), password: defaultPass, role: 'student', photo: 'default-avatar.png' },
     })
+    
+    // Assign valid kelas and jurusan options randomly to avoid formatting issues
+    const randomKelas = validKelas[Math.floor(Math.random() * validKelas.length)]
+    const randomJurusan = validJurusan[Math.floor(Math.random() * validJurusan.length)]
+
     await prisma.studentProfile.create({
-      data: { userId: user.id, nis: `2024${String(nisCounter++).padStart(3, '0')}`, kelas: 'XII SIJA 2', jurusan: 'Sistem Informasi Jaringan dan Aplikasi', angkatan: '2024' },
+      data: { 
+        userId: user.id, 
+        nis: `2024${String(nisCounter++).padStart(3, '0')}`, 
+        kelas: randomKelas, 
+        jurusan: 'SIJA', 
+        angkatan: '2024' 
+      },
     })
   }
-  console.log(`  ✓ ${siswa1.length + siswa2.length} siswa`)
+  console.log(`  ✓ Seeding ${siswaList.length} siswa`)
 
   // ============================================================
-  // GURU
+  // GURU (Teachers)
   // ============================================================
   console.log(' 👨‍🏫 Creating teachers...')
 
-  const guruData = [
+  const defaultGuru = [
     { name: 'Achmad Rifa\'i', jabatan: 'Wakil Kepala Sekolah Bidang Laboratorium IT dan Sarpra', bidang: 'Teknologi Informasi' },
-    { name: 'Eka Prasetia P. Iswardiani', jabatan: 'Wakil Kepala Sekolah Bidang Hubungan Industri', bidang: 'Bisnis & Kewirausahaan' },
+    { name: 'Eka Prasetia Putri Iswardiani', jabatan: 'Wakil Kepala Sekolah Bidang Hubungan Industri', bidang: 'Bisnis & Kewirausahaan' },
     { name: 'Maulana Al Ghofiqi', jabatan: 'Wakil Kepala Sekolah Bidang Kesiswaan', bidang: 'Sosial & Kemanusiaan' },
     { name: 'Sigit Eka Prayoga', jabatan: 'Tata Usaha', bidang: 'Bisnis & Kewirausahaan' },
     { name: 'Amir Hamka', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
@@ -183,7 +200,7 @@ async function main() {
     { name: 'Indra Hadi Pranata', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
     { name: 'Lailatun Nikmah', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
     { name: 'Lia Indriawati', jabatan: 'Guru Pendidikan Agama Islam', bidang: 'Agama & Keagamaan' },
-    { name: 'M. Adam Nuh Ibrahim', jabatan: 'Guru Sejarah dan Pendidikan Pancasila', bidang: 'Sosial & Kemanusiaan' },
+    { name: 'Muhammad Adam Nuh Ibrahim', jabatan: 'Guru Sejarah dan Pendidikan Pancasila', bidang: 'Sosial & Kemanusiaan' },
     { name: 'Mohammad Suhud Abdillah', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
     { name: 'Mokhammad Misbakhul Abid', jabatan: 'Guru Matematika', bidang: 'Sains & Matematika' },
     { name: 'Muhammad Adi Riswanto', jabatan: 'Guru Mata Pelajaran Produktif', bidang: 'Teknologi Informasi' },
@@ -192,16 +209,22 @@ async function main() {
     { name: 'Nafta Rahma', jabatan: 'Guru Bahasa Indonesia', bidang: 'Bahasa & Komunikasi' },
   ]
 
+  const guruList = customPack?.guru || defaultGuru
   let nipCounter = 1
-  for (const g of guruData) {
+  for (const g of guruList) {
     const user = await prisma.user.create({
       data: { name: g.name, email: email(g.name), password: defaultPass, role: 'teacher', photo: 'default-avatar.png' },
     })
     await prisma.teacherProfile.create({
-      data: { userId: user.id, nip: `1985010120100${String(nipCounter++).padStart(3, '0')}`, bidangKeahlian: g.bidang, jabatan: g.jabatan },
+      data: { 
+        userId: user.id, 
+        nip: `1985010120100${String(nipCounter++).padStart(3, '0')}`, 
+        bidangKeahlian: g.bidang || 'Teknologi Informasi', 
+        jabatan: g.jabatan || 'Guru Pembimbing' 
+      },
     })
   }
-  console.log(`  ✓ ${guruData.length} guru`)
+  console.log(`  ✓ Seeding ${guruList.length} guru`)
 
   // ============================================================
   // BADGES
@@ -217,7 +240,7 @@ async function main() {
   for (const badge of badges) {
     await prisma.badge.create({ data: badge })
   }
-  console.log(`  ✓ ${badges.length} badges`)
+  console.log(`  ✓ Seeding ${badges.length} badges`)
 
   // ============================================================
   // APP SETTINGS
@@ -238,7 +261,7 @@ async function main() {
   for (const s of settings) {
     await prisma.appSetting.create({ data: s })
   }
-  console.log(`  ✓ ${settings.length} app settings`)
+  console.log(`  ✓ Seeding ${settings.length} app settings`)
 
   console.log('\n✅ Seeding complete!')
 }

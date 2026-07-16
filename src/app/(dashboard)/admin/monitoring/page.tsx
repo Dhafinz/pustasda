@@ -16,7 +16,10 @@ export default async function AdminMonitoringPage() {
       participation: {
         include: {
           user: { select: { id: true, name: true, email: true } },
-          competition: { select: { id: true, title: true, organizer: true } }
+          competition: { select: { id: true, title: true, organizer: true } },
+          steps: {
+            orderBy: { stepOrder: 'asc' }
+          }
         }
       },
       activities: {
@@ -33,13 +36,29 @@ export default async function AdminMonitoringPage() {
     teacherName: m.teacher.name,
     student: m.participation.user,
     competition: m.participation.competition,
+    participation: {
+      id: m.participation.id,
+      status: m.participation.status,
+      result: m.participation.result,
+      notes: m.participation.notes,
+      steps: m.participation.steps.map(s => ({
+        id: s.id,
+        stepName: s.stepName,
+        stepOrder: s.stepOrder,
+        isConfirmed: s.isConfirmed,
+        confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
+        notes: s.notes
+      }))
+    },
     activities: m.activities.map(a => ({
       id: a.id,
       title: a.title,
       description: a.description,
       scheduleDate: a.scheduleDate ? a.scheduleDate.toISOString() : null,
       status: a.status,
-      teacherNotes: a.teacherNotes
+      teacherNotes: a.teacherNotes,
+      documentUrl: a.documentUrl,
+      location: a.location
     }))
   }))
 

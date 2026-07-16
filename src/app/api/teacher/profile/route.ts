@@ -10,14 +10,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     const userId = parseInt(session.user.id)
-    const { name, waNumber, bidangKeahlian } = await request.json()
+    const { name, waNumber, bidangKeahlian, photo } = await request.json()
 
     // Update core User details
     await prisma.user.update({
       where: { id: userId },
       data: {
         name: name || undefined,
-        waNumber: waNumber !== undefined ? waNumber : undefined
+        waNumber: waNumber !== undefined ? waNumber : undefined,
+        photo: photo !== undefined ? photo : undefined
       }
     })
 

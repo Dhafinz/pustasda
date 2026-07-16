@@ -11,6 +11,7 @@ interface TeacherProfileData {
   nip: string
   bidangKeahlian: string
   jabatan: string
+  photo: string
 }
 
 export function TeacherProfileClient({ initialData }: { initialData: TeacherProfileData }) {
@@ -22,16 +23,16 @@ export function TeacherProfileClient({ initialData }: { initialData: TeacherProf
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(saving)
+    setSaving(true)
     try {
-      // Reusing student endpoint with standard profile fields. Let's make an API route or server action, but for simplicity let's make an API route at `src/app/api/teacher/profile/route.ts` which we will create next.
       const res = await fetch('/api/teacher/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           waNumber: formData.waNumber,
-          bidangKeahlian: formData.bidangKeahlian
+          bidangKeahlian: formData.bidangKeahlian,
+          photo: formData.photo
         })
       })
 
@@ -62,6 +63,55 @@ export function TeacherProfileClient({ initialData }: { initialData: TeacherProf
 
       <div className="card">
         <form onSubmit={handleSubmit}>
+          {/* Profile Picture Upload Section */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'var(--gray-light)', padding: '16px', borderRadius: 'var(--radius)', marginBottom: '24px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--gray-dark)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--gray-mid)' }}>
+              {formData.photo && formData.photo !== 'default-avatar.png' && formData.photo !== 'default_avatar.png' ? (
+                <img src={formData.photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                formData.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Foto Profil</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', height: '28px', padding: '0 12px' }}>
+                  <i className="fa-solid fa-cloud-arrow-up"></i> Upload Foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        if (file.size > 1024 * 1024) {
+                          addToast('Ukuran file maksimal 1MB!', 'error')
+                          return
+                        }
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setFormData({ ...formData, photo: reader.result as string })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                {formData.photo && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ height: '28px', padding: '0 12px', color: 'var(--red)', borderColor: 'var(--red)' }}
+                    onClick={() => setFormData({ ...formData, photo: '' })}
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+              <span style={{ fontSize: '0.68rem', color: 'var(--gray)' }}>Format JPG/PNG/WebP, Maksimal 1MB</span>
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label">Nomor Induk Pegawai (NIP)</label>

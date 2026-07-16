@@ -16,7 +16,7 @@ export async function PATCH(
     const { id } = await params
     const targetUserId = parseInt(id)
     const body = await request.json()
-    const { name, email, role, password, isActive, extra1, extra2, extra3, angkatan } = body
+    const { name, email, role, password, isActive, extra1, extra2, extra3, angkatan, photo } = body
 
     if (isNaN(targetUserId) || !name || !email || !role) {
       return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
@@ -25,6 +25,9 @@ export async function PATCH(
     const updateData: any = { name, email, role, isActive }
     if (password && password.trim() !== '') {
       updateData.password = hashSync(password, 10)
+    }
+    if (photo !== undefined) {
+      updateData.photo = photo
     }
 
     const updatedUser = await prisma.user.update({
@@ -38,15 +41,15 @@ export async function PATCH(
         where: { userId: targetUserId },
         update: { 
           nis: extra1 || '-',
-          kelas: extra2 || '-', 
-          jurusan: extra3 || '-',
+          kelas: extra2 || 'XII', 
+          jurusan: extra3 || 'SIJA',
           angkatan: angkatan ? String(angkatan) : null
         },
         create: { 
           userId: targetUserId, 
           nis: extra1 || '-',
-          kelas: extra2 || '-', 
-          jurusan: extra3 || '-',
+          kelas: extra2 || 'XII', 
+          jurusan: extra3 || 'SIJA',
           angkatan: angkatan ? String(angkatan) : null
         }
       })

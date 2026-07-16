@@ -1784,6 +1784,9 @@ textarea.form-input {
     border: 1px solid rgba(0, 0, 0, 0.04);
     position: sticky;
     top: calc(var(--navbar-h) + 28px);
+    max-height: calc(100vh - var(--navbar-h) - 56px);
+    display: flex;
+    flex-direction: column;
 }
 
 .detail-panel-header {
@@ -1796,12 +1799,15 @@ textarea.form-input {
 
 .detail-panel-body {
     padding: 20px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .detail-panel-poster {
     width: 100%;
-    height: 180px;
-    object-fit: cover;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
     border-radius: var(--radius-sm);
     margin-bottom: 16px;
     background: var(--gray-light);

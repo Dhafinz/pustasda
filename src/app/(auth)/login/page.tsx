@@ -44,7 +44,7 @@ export default function LoginPage() {
       {/* Left Panel */}
       <div className="auth-left">
         <div className="auth-left-content">
-          <div style={{ maxWidth: '400px', margin: '0 auto 24px auto' }}>
+          <div style={{ maxWidth: '400px', margin: '0 auto 24px auto', display: 'flex', justifyContent: 'center' }}>
             <Image 
               src={logoImg} 
               alt="Logo Pustasda" 

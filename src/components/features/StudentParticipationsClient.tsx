@@ -394,6 +394,29 @@ export function StudentParticipationsClient({
     }
   }
 
+  const handleKickMember = async (memberId: number, memberName: string) => {
+    if (!activeP || !activeP.team) return
+    if (!confirm(`Apakah Anda yakin ingin mengeluarkan ${memberName} dari tim?`)) return
+    
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/teams/${activeP.team.id}/members/${memberId}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (res.ok) {
+        addToast(`${memberName} berhasil dikeluarkan dari tim.`, 'success')
+        refreshActiveParticipation()
+      } else {
+        addToast(data.error || 'Gagal mengeluarkan anggota', 'error')
+      }
+    } catch {
+      addToast('Koneksi terganggu', 'error')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   // Helper: Refresh active participation state from server
   const refreshActiveParticipation = async () => {
     if (!activeP) return
@@ -605,6 +628,9 @@ export function StudentParticipationsClient({
                 {/* Action CTA Buttons */}
                 {(() => {
                   const isLeader = !activeP.team || activeP.team.leaderId === currentUserId;
+                  const hasMinMembers = !activeP.team || activeP.team.members.length >= activeP.competition.minMembers;
+                  const isTeamFull = activeP.team && activeP.team.members.length >= activeP.competition.maxMembers;
+
                   return (
                     <div style={{ width: '100%' }}>
                       {!isLeader && (
@@ -613,13 +639,28 @@ export function StudentParticipationsClient({
                           Hanya ketua tim (<strong>{activeP.team?.leader?.name || 'Ketua'}</strong>) yang dapat mengubah status dan progres pengerjaan lomba ini.
                         </div>
                       )}
+
+                      {!hasMinMembers && isLeader && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--yellow-dark)', background: 'var(--yellow-light)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '12px', borderLeft: '3px solid var(--yellow)' }}>
+                          <i className="fa-solid fa-circle-exclamation" style={{ marginRight: '6px' }}></i>
+                          Jumlah anggota tim saat ini (<strong>{activeP.team?.members.length || 0} orang</strong>) kurang dari syarat minimal (<strong>{activeP.competition.minMembers} orang</strong>). Tim Anda harus memenuhi batas minimal sebelum Anda dapat memulai pengerjaan lomba ini.
+                        </div>
+                      )}
+
+                      {isTeamFull && isLeader && activeP.status === 'registered' && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--green)', background: 'var(--green-light)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '12px', borderLeft: '3px solid var(--green)' }}>
+                          <i className="fa-solid fa-circle-check" style={{ marginRight: '6px' }}></i>
+                          Tim Anda sudah penuh dan telah memenuhi batas maksimal peserta yaitu <strong>{activeP.competition.maxMembers} orang</strong>.
+                        </div>
+                      )}
+
                       <div style={{ display: 'flex', gap: '10px' }}>
                         {activeP.status === 'registered' && (
                           <button
                             className="btn btn-primary btn-block"
                             onClick={handleStartWorking}
-                            disabled={updating || !isLeader}
-                            style={!isLeader ? { background: 'var(--gray-mid)', borderColor: 'var(--gray-mid)', color: 'var(--gray-dark)', cursor: 'not-allowed', opacity: 0.6 } : {}}
+                            disabled={updating || !isLeader || !hasMinMembers}
+                            style={(!isLeader || !hasMinMembers) ? { background: 'var(--gray-mid)', borderColor: 'var(--gray-mid)', color: 'var(--gray-dark)', cursor: 'not-allowed', opacity: 0.6 } : {}}
                           >
                             {updating ? 'Memproses...' : <><i className="fa-solid fa-play"></i> Mulai Pengerjaan Lomba</>}
                           </button>
@@ -653,7 +694,12 @@ export function StudentParticipationsClient({
                         )}
 
                         {activeP.status === 'submitted' && (
-                          <button className="btn btn-primary btn-block" onClick={() => { setSelectedResult('juara_1'); setIsCompleteModalOpen(true); }} disabled={!isLeader}>
+                          <button
+                            className="btn btn-primary btn-block"
+                            onClick={() => { setSelectedResult('juara_1'); setIsCompleteModalOpen(true); }}
+                            disabled={!isLeader}
+                            style={!isLeader ? { background: 'var(--gray-mid)', borderColor: 'var(--gray-mid)', color: 'var(--gray-dark)', cursor: 'not-allowed', opacity: 0.6 } : {}}
+                          >
                             <i className="fa-solid fa-trophy"></i> Selesaikan Lomba &amp; Masukkan Juara
                           </button>
                         )}
@@ -698,8 +744,12 @@ export function StudentParticipationsClient({
                     {activeP.team.members.map((m) => (
                       <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gray-light)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center' }}>
-                            {m.user.name.charAt(0)}
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--red)', color: 'var(--white)', display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                            {m.user.photo && m.user.photo !== 'default-avatar.png' && m.user.photo !== 'default_avatar.png' ? (
+                              <img src={m.user.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                            m.user.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                            )}
                           </div>
                           <div>
                             <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>
@@ -734,15 +784,28 @@ export function StudentParticipationsClient({
                                 {m.role || 'Anggota'}
                               </span>
                               {activeP.team?.leaderId === currentUserId && (
-                                <button
-                                  style={{ background: 'none', border: 'none', color: 'var(--gray)', cursor: 'pointer', fontSize: '0.75rem' }}
-                                  onClick={() => {
-                                    setEditingMemberId(m.id)
-                                    setEditRoleValue(m.role || '')
-                                  }}
-                                >
-                                  <i className="fa-solid fa-pen"></i>
-                                </button>
+                                <>
+                                  <button
+                                    style={{ background: 'none', border: 'none', color: 'var(--gray)', cursor: 'pointer', fontSize: '0.75rem' }}
+                                    onClick={() => {
+                                      setEditingMemberId(m.id)
+                                      setEditRoleValue(m.role || '')
+                                    }}
+                                    title="Ubah Role"
+                                  >
+                                    <i className="fa-solid fa-pen"></i>
+                                  </button>
+                                  {m.userId !== activeP.team?.leaderId && (
+                                    <button
+                                      type="button"
+                                      style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '0.75rem', padding: '4px', marginLeft: '4px' }}
+                                      onClick={() => handleKickMember(m.id, m.user.name)}
+                                      title="Keluarkan Anggota"
+                                    >
+                                      <i className="fa-solid fa-user-xmark"></i>
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )}
@@ -761,14 +824,18 @@ export function StudentParticipationsClient({
 
                 {activeP.mentorship && activeP.mentorship.status !== 'rejected' ? (
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--gray-light)', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gray-dark)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
-                          {activeP.mentorship.teacher.name.charAt(0)}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--gray-light)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gray-dark)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0, overflow: 'hidden' }}>
+                          {activeP.mentorship.teacher.photo && activeP.mentorship.teacher.photo !== 'default-avatar.png' && activeP.mentorship.teacher.photo !== 'default_avatar.png' ? (
+                            <img src={activeP.mentorship.teacher.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            activeP.mentorship.teacher.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                          )}
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{activeP.mentorship.teacher.name}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--gray)' }}>{activeP.mentorship.teacher.email}</div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={activeP.mentorship.teacher.name}>{activeP.mentorship.teacher.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={activeP.mentorship.teacher.email}>{activeP.mentorship.teacher.email}</div>
                         </div>
                       </div>
 

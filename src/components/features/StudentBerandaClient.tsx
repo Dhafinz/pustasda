@@ -19,6 +19,7 @@ interface CompData {
 interface LeaderboardEntry {
   id: number
   name: string
+  photo: string | null
   kelas: string
   jurusan: string
   poin: number
@@ -274,8 +275,12 @@ export function StudentBerandaClient({
                     </td>
                     <td>
                       <div className="leaderboard-student">
-                        <div className="leaderboard-student-avatar">
-                          {entry.name.charAt(0)}
+                        <div className="leaderboard-student-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {entry.photo && entry.photo !== 'default-avatar.png' && entry.photo !== 'default_avatar.png' ? (
+                            <img src={entry.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            entry.name.split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || 'U'
+                          )}
                         </div>
                         <div>
                           <div className="leaderboard-student-name">

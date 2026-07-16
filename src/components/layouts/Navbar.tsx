@@ -21,7 +21,14 @@ export function Navbar({ user, pageTitle }: NavbarProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  const initials = user.name?.charAt(0)?.toUpperCase() || 'U'
+  const getInitials = (name: string | null | undefined): string => {
+    if (!name) return 'U'
+    const parts = name.trim().split(/\s+/)
+    const first = parts[0]?.charAt(0) || ''
+    const second = parts[1]?.charAt(0) || ''
+    return (first + second).toUpperCase() || 'U'
+  }
+  const initials = getInitials(user.name)
   const displayRole = user.role === 'student' ? 'Siswa' :
     user.role === 'teacher' ? 'Guru' :
     user.role === 'developer' ? 'Developer' : 'Admin'
@@ -168,7 +175,13 @@ export function Navbar({ user, pageTitle }: NavbarProps) {
             className="navbar-user"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <div className="navbar-user-avatar">{initials}</div>
+            <div className="navbar-user-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {user.photo && user.photo !== 'default-avatar.png' && user.photo !== 'default_avatar.png' ? (
+                <img src={user.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials
+              )}
+            </div>
             <span className="navbar-user-name">{user.name}</span>
             <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.6rem', color: 'var(--gray)' }}></i>
           </div>

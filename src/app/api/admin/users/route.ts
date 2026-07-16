@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
           data: {
             userId: created.id,
             nis: extra1 || `NIS-${created.id}`,
-            kelas: extra2 || 'XII SIJA TJAT',
-            jurusan: extra3 || 'Rekayasa Perangkat Lunak',
+            kelas: extra2 || 'XII',
+            jurusan: extra3 || 'SIJA',
             angkatan: angkatan ? String(angkatan) : '2026'
           }
         })
