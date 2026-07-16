@@ -10,13 +10,15 @@ export async function loginAction(email: string, password: string): Promise<stri
       password,
       redirectTo: '/',
     })
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
-      // Show the root cause of CallbackRouteError
-      const cause: any = error.cause?.err || error.cause || error
-      return `[${error.type}] cause: ${cause?.message || String(cause)} | stack: ${String(cause?.stack || '').substring(0, 300)}`
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Email atau password salah. Silakan coba lagi.'
+        default:
+          return 'Terjadi kesalahan autentikasi. Silakan coba lagi.'
+      }
     }
-    // Re-throw non-AuthError (including NEXT_REDIRECT on success)
     throw error
   }
 }

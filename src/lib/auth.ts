@@ -23,15 +23,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const isValid = await compare(credentials.password as string, user.password)
         if (!isValid) return null
 
-        // Log activity
-        await prisma.activityLog.create({
-          data: {
-            userId: user.id,
-            action: 'login',
-            module: 'auth',
-            description: `User ${user.name} logged in`,
-          },
-        })
+        // Log activity (non-blocking — don't let logging failure block login)
+        try {
+          await prisma.activityLog.create({
+            data: {
+              userId: user.id,
+              action: 'login',
+              module: 'auth',
+              description: `User ${user.name} logged in`,
+            },
+          })
+        } catch {
+          // Silently ignore logging errors
+        }
 
         return {
           id: String(user.id),
