@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,30 +9,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
+    // Limit upload to 4.5MB (Vercel serverless request body size limit)
+    if (file.size > 4.5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Ukuran file melebihi batas 4.5MB' }, { status: 400 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Generate unique name
-    const timestamp = Date.now()
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${timestamp}_${safeName}`
-    
-    const uploadDir = join(process.cwd(), 'public', 'uploads')
-    
-    // Ensure dir exists
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-    
-    const filePath = join(uploadDir, filename)
-    await writeFile(filePath, buffer)
+    // Convert file to Base64 Data URL (fully serverless and Vercel compatible)
+    const base64Data = buffer.toString('base64')
+    const mimeType = file.type || 'application/octet-stream'
+    const url = `data:${mimeType};base64,${base64Data}`
 
     return NextResponse.json({ 
       message: 'File uploaded successfully', 
-      url: `/uploads/${filename}` 
+      url: url 
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST /api/upload error:', error)
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to upload file: ' + error.message }, { status: 500 })
   }
 }
