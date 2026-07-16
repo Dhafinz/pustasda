@@ -710,7 +710,7 @@ export function StudentParticipationsClient({
 
                   {activeP.status === 'completed' && (
                     <div style={{ width: '100%', padding: '12px', background: 'var(--green-light)', border: '1px solid var(--green)', color: 'var(--green)', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', textAlign: 'center', fontWeight: 600 }}>
-                      🎉 Lomba Selesai Diikuti. Terima kasih atas perjuangan luar biasa Anda!
+                      <i className="fa-solid fa-circle-check" style={{ marginRight: '6px' }}></i> Lomba Selesai Diikuti. Terima kasih atas perjuangan luar biasa Anda!
                       {activeP.notes && (
                         <div style={{ marginTop: '8px', fontSize: '0.72rem' }}>
                           <a href={activeP.notes} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'underline' }}>

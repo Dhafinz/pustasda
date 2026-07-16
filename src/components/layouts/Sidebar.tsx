@@ -19,9 +19,13 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
     role === 'teacher' ? 'Guru' :
       role === 'developer' ? 'Developer' : 'Admin'
 
-  const displaySubRole = role === 'student' ? '📚 Umum' :
-    role === 'teacher' ? '📖 Guru Produktif' :
-      role === 'developer' ? '💻 Web Developer' : '🔑 Administrator'
+  const displaySubRole = role === 'student' ? 'Umum' :
+    role === 'teacher' ? 'Guru Produktif' :
+      role === 'developer' ? 'Web Developer' : 'Administrator'
+
+  const subRoleIcon = role === 'student' ? 'fa-book-open' :
+    role === 'teacher' ? 'fa-chalkboard-teacher' :
+      role === 'developer' ? 'fa-code' : 'fa-shield-halved'
 
   const isActive = (path: string) => pathname === path ? 'active' : ''
   const isActivePrefix = (path: string) => pathname.startsWith(path) ? 'active' : ''
@@ -39,18 +43,18 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
     <aside className="sidebar">
       {/* Brand Header */}
       <div className="sidebar-header">
-        {appLogo ? (
-          <img
-            src={appLogo.startsWith('/') || appLogo.startsWith('http') ? appLogo : `/images/${appLogo}`}
-            alt="logo"
-            style={{ maxHeight: '32px', maxWidth: '32px', borderRadius: '4px', objectFit: 'contain' }}
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="sidebar-logo-placeholder">P</div>
-        )}
+        <img 
+          src={appLogo && (appLogo.startsWith('/') || appLogo.startsWith('http')) 
+            ? appLogo 
+            : appLogo 
+              ? `/uploads/${appLogo}` 
+              : '/logo.png'} 
+          alt="Pustasda" 
+          style={{ maxHeight: '32px', maxWidth: '32px', borderRadius: '4px', objectFit: 'contain' }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/logo.png';
+          }}
+        />
         <span className="sidebar-brand">Pustasda</span>
       </div>
 
@@ -88,22 +92,17 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           <div className="sidebar-divider"></div>
 
           <div className="sidebar-section">
-            <span className="sidebar-label">Lomba</span>
+            <span className="sidebar-label">Utama</span>
             <Link href="/student/explore" className={`sidebar-nav-item ${isActivePrefix('/student/explore')}`}>
               <i className="fa-solid fa-compass"></i> Eksplor Lomba
             </Link>
             <Link href="/student/participations" className={`sidebar-nav-item ${isActivePrefix('/student/participations')}`}>
-              <i className="fa-solid fa-bookmark"></i> Lomba Saya
+              <i className="fa-solid fa-award"></i> Lomba Saya
             </Link>
             <Link href="/student/rekapitulasi" className={`sidebar-nav-item ${isActivePrefix('/student/rekapitulasi')}`}>
-              <i className="fa-solid fa-chart-simple"></i> Rekapitulasi
+              <i className="fa-solid fa-file-invoice"></i> Rekapitulasi
             </Link>
-          </div>
-
-          <div className="sidebar-divider"></div>
-
-          <div className="sidebar-section">
-            <Link href="/student/leaderboard" className={`sidebar-nav-item ${isActive('/student/leaderboard')}`}>
+            <Link href="/student/leaderboard" className={`sidebar-nav-item ${isActivePrefix('/student/leaderboard')}`}>
               <i className="fa-solid fa-ranking-star"></i> Leaderboard
             </Link>
           </div>
@@ -115,9 +114,10 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
         <>
           <div className="sidebar-section">
             <Link href="/teacher" className={`sidebar-nav-item ${isActive('/teacher')}`}>
-              <i className="fa-solid fa-house"></i> Dashboard
+              <i className="fa-solid fa-house"></i> Beranda
             </Link>
 
+            {/* Pengaturan Dropdown */}
             <div className="sidebar-dropdown">
               <button
                 className={`sidebar-dropdown-toggle ${settingsOpen ? 'open' : ''}`}
@@ -140,21 +140,15 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           <div className="sidebar-divider"></div>
 
           <div className="sidebar-section">
-            <span className="sidebar-label">Lomba</span>
-            <Link href="/teacher/explore" className={`sidebar-nav-item ${isActivePrefix('/teacher/explore')}`}>
-              <i className="fa-solid fa-compass"></i> Eksplor Lomba
-            </Link>
-          </div>
-
-          <div className="sidebar-divider"></div>
-
-          <div className="sidebar-section">
             <span className="sidebar-label">Bimbingan</span>
-            <Link href="/teacher/bimbingan" className={`sidebar-nav-item ${isActivePrefix('/teacher/bimbingan')}`}>
-              <i className="fa-solid fa-chalkboard-user"></i> Bimbingan
-            </Link>
             <Link href="/teacher/inbox" className={`sidebar-nav-item ${isActivePrefix('/teacher/inbox')}`}>
               <i className="fa-solid fa-inbox"></i> Kotak Masuk
+            </Link>
+            <Link href="/teacher/bimbingan" className={`sidebar-nav-item ${isActivePrefix('/teacher/bimbingan')}`}>
+              <i className="fa-solid fa-users"></i> Bimbingan Aktif
+            </Link>
+            <Link href="/teacher/rekapitulasi" className={`sidebar-nav-item ${isActivePrefix('/teacher/rekapitulasi')}`}>
+              <i className="fa-solid fa-file-invoice-dollar"></i> Rekapitulasi
             </Link>
             <Link href="/teacher/search-student" className={`sidebar-nav-item ${isActivePrefix('/teacher/search-student')}`}>
               <i className="fa-solid fa-magnifying-glass"></i> Cari Siswa
@@ -164,8 +158,9 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           <div className="sidebar-divider"></div>
 
           <div className="sidebar-section">
-            <Link href="/teacher/rekapitulasi" className={`sidebar-nav-item ${isActivePrefix('/teacher/rekapitulasi')}`}>
-              <i className="fa-solid fa-chart-simple"></i> Rekapitulasi
+            <span className="sidebar-label">Lomba</span>
+            <Link href="/teacher/explore" className={`sidebar-nav-item ${isActivePrefix('/teacher/explore')}`}>
+              <i className="fa-solid fa-compass"></i> Eksplor Lomba
             </Link>
           </div>
         </>
@@ -176,7 +171,7 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
         <>
           <div className="sidebar-section">
             <Link href="/admin" className={`sidebar-nav-item ${isActive('/admin')}`}>
-              <i className="fa-solid fa-chart-pie"></i> Dashboard
+              <i className="fa-solid fa-house"></i> Beranda
             </Link>
           </div>
 
@@ -185,10 +180,10 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           <div className="sidebar-section">
             <span className="sidebar-label">Manajemen</span>
             <Link href="/admin/users" className={`sidebar-nav-item ${isActivePrefix('/admin/users')}`}>
-              <i className="fa-solid fa-users-gear"></i> Manajemen User
+              <i className="fa-solid fa-users-gear"></i> Pengguna
             </Link>
             <Link href="/admin/competitions" className={`sidebar-nav-item ${isActivePrefix('/admin/competitions')}`}>
-              <i className="fa-solid fa-trophy"></i> Manajemen Lomba
+              <i className="fa-solid fa-trophy"></i> Lomba
             </Link>
             <Link href="/admin/categories" className={`sidebar-nav-item ${isActivePrefix('/admin/categories')}`}>
               <i className="fa-solid fa-tags"></i> Kategori & Bidang
@@ -200,7 +195,7 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           <div className="sidebar-section">
             <span className="sidebar-label">Monitoring</span>
             <Link href="/admin/monitoring" className={`sidebar-nav-item ${isActivePrefix('/admin/monitoring')}`}>
-              <i className="fa-solid fa-desktop"></i> Kegiatan Bimbingan
+              <i className="fa-solid fa-chart-line"></i> Bimbingan
             </Link>
             <Link href="/admin/leaderboard" className={`sidebar-nav-item ${isActivePrefix('/admin/leaderboard')}`}>
               <i className="fa-solid fa-ranking-star"></i> Leaderboard
@@ -244,7 +239,10 @@ export function Sidebar({ user, appLogo }: { user: SidebarUser, appLogo?: string
           </div>
           <div className="su-info">
             <div className="su-name">{user.name}</div>
-            <div className="su-role">{displaySubRole}</div>
+            <div className="su-role">
+              <i className={`fa-solid ${subRoleIcon}`} style={{ marginRight: '4px', fontSize: '0.7rem' }}></i>
+              {displaySubRole}
+            </div>
           </div>
         </div>
       </div>

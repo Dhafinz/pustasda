@@ -533,8 +533,8 @@ export function TeacherBimbinganClient({ initialMentorships }: Props) {
             <div className="form-group">
               <label className="form-label">Keputusan Verifikasi</label>
               <select className="form-select" value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value)}>
-                <option value="approved">Setujui Progres (ACC) 👍</option>
-                <option value="rejected">Tolak / Butuh Revisi ⚠️</option>
+                <option value="approved">Setujui Progres (ACC)</option>
+                <option value="rejected">Tolak / Butuh Revisi</option>
               </select>
             </div>
 

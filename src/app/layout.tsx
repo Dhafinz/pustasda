@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PUSTASDA — Pusat Prestasi SMK Telkom Sidoarjo',
+  title: 'Pustasda',
   description: 'Platform manajemen prestasi siswa SMK Telkom Sidoarjo. Kelola lomba, tim, bimbingan, dan raih prestasi maksimal.',
   keywords: 'pustasda, prestasi, smk telkom, sidoarjo, lomba, kompetisi',
 }
@@ -33,7 +33,7 @@ export default async function RootLayout({
   const primaryColor = settings.find(s => s.key === 'primary_color')?.value || '#e31e25'
   const appIcon = settings.find(s => s.key === 'app_icon')?.value || '/favicon.ico'
   const redDark = darkenHexColor(primaryColor, 15)
-  const appIconUrl = appIcon.startsWith('/') || appIcon.startsWith('http') ? appIcon : `/images/${appIcon}`
+  const appIconUrl = appIcon.startsWith('/') || appIcon.startsWith('http') ? appIcon : `/uploads/${appIcon}`
 
   return (
     <html lang="id" suppressHydrationWarning>

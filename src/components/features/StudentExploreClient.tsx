@@ -885,7 +885,7 @@ export function StudentExploreClient({
         }
       >
         <div style={{ textAlign: 'center', padding: '10px 0' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '14px' }}>🎉</div>
+          <div style={{ fontSize: '2.5rem', marginBottom: '14px', color: 'var(--red)' }}><i className="fa-solid fa-share-nodes"></i></div>
           <h4 style={{ fontWeight: 700, marginBottom: '8px' }}>Bagikan Kode Undangan Anda</h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--gray)', marginBottom: '18px' }}>
             Teman tim Anda dapat memasukkan kode ini pada menu <strong>Eksplor Lomba</strong> atau <strong>Gabung Tim</strong>.

@@ -163,6 +163,33 @@ export function DeveloperSettingsClient({ initialColor, initialIcon }: Props) {
                 </label>
               </div>
             </div>
+
+            {icon && (
+              <div style={{ marginBottom: '16px' }}>
+                <label className="form-label">Pratinjau Logo Aktif</label>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--gray-light)',
+                  padding: '16px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px dashed var(--gray-mid)',
+                  minWidth: '120px',
+                  minHeight: '80px'
+                }}>
+                  <img
+                    src={icon.startsWith('/') || icon.startsWith('http') ? icon : `/uploads/${icon}`}
+                    alt="Logo Preview"
+                    style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/logo.png';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
                 Update Nama Icon

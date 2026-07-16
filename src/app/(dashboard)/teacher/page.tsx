@@ -57,7 +57,9 @@ export default async function TeacherDashboardPage() {
         {/* Welcome Banner */}
         <div className="welcome-banner" style={{ background: 'linear-gradient(135deg, var(--red-dark), #7f0000)' }}>
           <div className="welcome-banner-content">
-            <div className="welcome-banner-greeting">📚 Selamat datang kembali Pembimbing,</div>
+            <div className="welcome-banner-greeting">
+              <i className="fa-solid fa-book-open" style={{ marginRight: '6px' }}></i> Selamat datang kembali Pembimbing,
+            </div>
             <h2>{session.user.name}</h2>
             <p className="welcome-banner-quote">"Membimbing siswa menuju puncak prestasi adalah kehormatan besar seorang pendidik."</p>
 

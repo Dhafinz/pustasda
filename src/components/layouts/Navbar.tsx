@@ -18,6 +18,12 @@ export function Navbar({ user, pageTitle }: NavbarProps) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
 
+  useEffect(() => {
+    if (pageTitle) {
+      document.title = `${pageTitle} Pustasda`
+    }
+  }, [pageTitle])
+
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 

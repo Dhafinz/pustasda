@@ -84,7 +84,7 @@ export function StudentBerandaClient({
       <div className="welcome-banner">
         <div className="welcome-banner-content">
           <div className="welcome-banner-greeting">
-            🎉 Selamat datang kembali,
+            <i className="fa-solid fa-hand-sparkles" style={{ marginRight: '6px' }}></i> Selamat datang kembali,
           </div>
           <h2>{userName}</h2>
           <p className="welcome-banner-quote">{quote}</p>
@@ -107,9 +107,10 @@ export function StudentBerandaClient({
           <div style={{
             width: '100%', height: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '6rem', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.2))'
+            fontSize: '5.5rem', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.2))',
+            color: 'var(--yellow)'
           }}>
-            🏆
+            <i className="fa-solid fa-trophy"></i>
           </div>
         </div>
       </div>

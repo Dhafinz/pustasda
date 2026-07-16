@@ -20,14 +20,18 @@ interface Suggestion {
 export function StudentQuizClient({ existingBio }: Props) {
   const { addToast, ToastContainer } = useToast()
 
-  const [currentStep, setCurrentStep] = useState(existingBio ? 'result' : 'intro') // intro -> q1 -> q2 -> q3 -> loading -> result
+  const [currentStep, setCurrentStep] = useState(existingBio ? 'result' : 'intro') // intro -> q0 -> q1 -> q2 -> q3 -> q4 -> loading -> result
   const [answers, setAnswers] = useState<string[]>([])
   const [analyzing, setAnalyzing] = useState(false)
 
-  // AI Quiz results
+  // AI Quiz results matching rich API output
   const [interestArea, setInterestArea] = useState('')
   const [explanation, setExplanation] = useState('')
   const [bioText, setBioText] = useState(existingBio || '')
+  const [personalityTraits, setPersonalityTraits] = useState<string[]>([])
+  const [strengthAnalysis, setStrengthAnalysis] = useState('')
+  const [growthAreas, setGrowthAreas] = useState('')
+  const [recommendedPath, setRecommendedPath] = useState('')
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
 
   const questions = [
@@ -60,6 +64,26 @@ export function StudentQuizClient({ existingBio }: Props) {
         { text: 'Menulis esai ilmiah yang memecahkan problem sosial lingkungan sekitar', value: 'esai' },
         { text: 'Membuat pitch deck startup digital untuk mencari investor', value: 'startup' }
       ]
+    },
+    {
+      id: 4,
+      question: 'Gaya belajar dan penyerapan materi kompetensi yang paling efektif bagi Anda?',
+      options: [
+        { text: 'Mencoba langsung lewat praktik mandiri, coding, atau merakit prototype', value: 'praktik' },
+        { text: 'Mempelajari grafis visual, melihat bagan alir, atau tutorial video interaktif', value: 'visual' },
+        { text: 'Membaca ebook/dokumentasi resmi, modul tertulis, dan menganalisis riset lama', value: 'membaca' },
+        { text: 'Berdiskusi dua arah, curah ide kelompok, serta tanya jawab interaktif', value: 'diskusi' }
+      ]
+    },
+    {
+      id: 5,
+      question: 'Aspirasi profesi atau peran impian Anda pasca kelulusan sekolah?',
+      options: [
+        { text: 'Software Developer, Systems Analyst, atau Cloud Architect teknis', value: 'engineer' },
+        { text: 'UI/UX Designer, Creative Director, atau Visual Artist digital', value: 'designer' },
+        { text: 'Riset Akademis, Peneliti Sains Terapan, atau Konsultan Kebijakan', value: 'researcher' },
+        { text: 'Digital Entrepreneur, Product Manager, atau Business Development', value: 'entrepreneur' }
+      ]
     }
   ]
 
@@ -90,7 +114,11 @@ export function StudentQuizClient({ existingBio }: Props) {
           setInterestArea(data.interestArea)
           setExplanation(data.explanation)
           setBioText(data.bioText)
-          setSuggestions(data.suggestions)
+          setPersonalityTraits(data.personalityTraits || [])
+          setStrengthAnalysis(data.strengthAnalysis || '')
+          setGrowthAreas(data.growthAreas || '')
+          setRecommendedPath(data.recommendedPath || '')
+          setSuggestions(data.suggestions || [])
           setCurrentStep('result')
           addToast('Analisis minat bakat AI selesai!', 'success')
         } else {
@@ -106,8 +134,13 @@ export function StudentQuizClient({ existingBio }: Props) {
     }
   }
 
+  const getTraitIcon = (index: number) => {
+    const icons = ['fa-bolt', 'fa-seedling', 'fa-gears', 'fa-award']
+    return icons[index % icons.length]
+  }
+
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '680px', margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '850px', margin: '0 auto' }}>
       <ToastContainer />
 
       <div className="page-header" style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -119,14 +152,16 @@ export function StudentQuizClient({ existingBio }: Props) {
 
       {/* STEP: INTRO */}
       {currentStep === 'intro' && (
-        <div className="card" style={{ textAlign: 'center', padding: '36px 24px' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '18px' }}>🔮</div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px' }}>Siap Menemukan Bakat Terbaikmu?</h2>
-          <p style={{ fontSize: '0.82rem', color: 'var(--gray)', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 24px' }}>
-            Kuis ini berkolaborasi dengan AI untuk memetakan kepribadian Anda ke dalam beberapa klaster lomba prestasi. Dibutuhkan waktu kurang dari 2 menit!
+        <div className="card" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: '3rem', color: 'var(--red)', marginBottom: '18px' }}>
+            <i className="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '10px' }}>Temukan Potensi Terbaikmu dengan AI</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--gray)', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 26px' }}>
+            Kuis ini dirancang untuk memetakan kepribadian, gaya belajar, dan bakat dominan Anda. AI akan menganalisis data riwayat lomba Anda di database untuk memberikan rekomendasi spesifik.
           </p>
           <button className="btn btn-primary" onClick={handleStart}>
-            Mulai Kuis Karakter <i className="fa-solid fa-arrow-right"></i>
+            Mulai Kuis Minat Bakat <i className="fa-solid fa-arrow-right" style={{ marginLeft: '6px' }}></i>
           </button>
         </div>
       )}
@@ -149,7 +184,7 @@ export function StudentQuizClient({ existingBio }: Props) {
               <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
             </div>
 
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '20px', lineHeight: 1.5 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '20px', lineHeight: 1.5 }}>
               {q.question}
             </h3>
 
@@ -188,58 +223,134 @@ export function StudentQuizClient({ existingBio }: Props) {
           <div className="loading-center" style={{ padding: 0, marginBottom: '20px' }}>
             <div className="spinner" style={{ width: '48px', height: '48px' }}></div>
           </div>
-          <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '6px' }}>AI Sedang Menganalisis Jawaban Anda...</h3>
-          <p style={{ fontSize: '0.78rem', color: 'var(--gray)' }}>Menentukan klaster minat bakat dan mencocokkan lomba yang sesuai di database.</p>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '6px' }}>AI Sedang Menganalisis Potensi Anda...</h3>
+          <p style={{ fontSize: '0.78rem', color: 'var(--gray)' }}>Menghubungkan kecenderungan jawaban kuis dengan histori prestasi Anda di PUSTASDA.</p>
         </div>
       )}
 
       {/* STEP: RESULT */}
       {currentStep === 'result' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="card animate-slide-up" style={{ textAlign: 'center', padding: '32px 24px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎯</div>
-            <span style={{ fontSize: '0.72rem', background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: '20px', fontWeight: 700, textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          {/* Main Hero Card */}
+          <div className="card animate-slide-up" style={{ textAlign: 'center', padding: '36px 28px', background: 'linear-gradient(180deg, var(--red-light) 0%, var(--white) 100%)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ fontSize: '3.5rem', color: 'var(--red)', marginBottom: '14px' }}>
+              <i className="fa-solid fa-bullseye"></i>
+            </div>
+            <span style={{ fontSize: '0.68rem', background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: '20px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Hasil Analisis Minat Bakat
             </span>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '10px', marginBottom: '14px' }}>
-              {interestArea || 'Klaster Kompetisi Sesuai'}
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, marginTop: '12px', marginBottom: '14px', color: 'var(--black)' }}>
+              {interestArea || 'Klaster Kompetisi Anda'}
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--gray-dark)', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 20px' }}>
-              {explanation || bioText}
+            <p style={{ fontSize: '0.85rem', color: 'var(--gray-dark)', lineHeight: 1.65, maxWidth: '640px', margin: '0 auto 16px' }}>
+              {explanation}
             </p>
-
-            <div style={{ background: 'var(--gray-light)', padding: '12px 16px', borderRadius: 'var(--radius)', fontSize: '0.72rem', color: 'var(--gray)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fa-solid fa-circle-info text-blue"></i> Hasil ini telah disimpan secara otomatis ke dalam data profil utama Anda.
+            {bioText && (
+              <div style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--gray)', marginTop: '8px' }}>
+                " {bioText} "
+              </div>
+            )}
+            <div style={{ marginTop: '24px', background: 'var(--gray-light)', padding: '12px 18px', borderRadius: 'var(--radius)', fontSize: '0.72rem', color: 'var(--gray-dark)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fa-solid fa-circle-check text-green"></i> Hasil profil bakat terbaru telah disematkan di biografi utama Anda secara otomatis.
             </div>
           </div>
 
-          {/* AI Recommended Competitions list */}
-          {suggestions.length > 0 && (
-            <div className="card animate-slide-up">
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '14px' }}>
-                <i className="fa-solid fa-lightbulb text-yellow" style={{ marginRight: '6px' }}></i> Rekomendasi Lomba untuk Anda
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {suggestions.map((comp) => (
-                  <div key={comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--gray-mid)', borderRadius: 'var(--radius-sm)' }}>
-                    <div>
-                      <h4 style={{ fontSize: '0.82rem', fontWeight: 700 }}>{comp.title}</h4>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--gray)', marginTop: '2px' }}>
-                        Penyelenggara: {comp.organizer} &bull; Tipe: {comp.type === 'team' ? 'Kelompok' : 'Individu'}
-                      </div>
-                    </div>
-                    <Link href={`/student/explore?id=${comp.id}`} className="btn btn-outline btn-sm" style={{ padding: '6px 12px', fontSize: '0.72rem' }}>
-                      Lihat Lomba
-                    </Link>
+          {/* Personality Traits Badges */}
+          {personalityTraits.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {personalityTraits.map((trait, index) => (
+                <div key={index} className="card animate-slide-up" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', borderLeft: '4px solid var(--red)' }}>
+                  <div style={{ fontSize: '1.25rem', color: 'var(--red)', background: 'var(--red-light)', width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center' }}>
+                    <i className={`fa-solid ${getTraitIcon(index)}`}></i>
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--gray)', textTransform: 'uppercase', fontWeight: 700 }}>Karakter Utama</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--black)' }}>{trait}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button className="btn btn-secondary" onClick={handleStart}>
+          {/* Two-Column Details */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+            
+            {/* Detailed Analysis Section */}
+            <div className="card animate-slide-up" style={{ padding: '24px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--gray-mid)', paddingBottom: '12px' }}>
+                <i className="fa-solid fa-square-poll-vertical text-red"></i> Hasil Profil Mandiri Siswa
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {strengthAnalysis && (
+                  <div>
+                    <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--black)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fa-solid fa-circle-nodes text-green"></i> Analisis Kekuatan & Riwayat
+                    </h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--gray-dark)', lineHeight: 1.55 }}>{strengthAnalysis}</p>
+                  </div>
+                )}
+
+                {growthAreas && (
+                  <div>
+                    <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--black)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fa-solid fa-circle-exclamation text-yellow"></i> Area Pengembangan Diri
+                    </h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--gray-dark)', lineHeight: 1.55 }}>{growthAreas}</p>
+                  </div>
+                )}
+
+                {recommendedPath && (
+                  <div>
+                    <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--black)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fa-solid fa-route text-blue"></i> Rekomendasi Karir & Skill
+                    </h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--gray-dark)', lineHeight: 1.55 }}>{recommendedPath}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recommendations Section */}
+            <div className="card animate-slide-up" style={{ padding: '24px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--gray-mid)', paddingBottom: '12px' }}>
+                <i className="fa-solid fa-lightbulb text-yellow"></i> Rekomendasi Kompetisi untuk Diikuti
+              </h3>
+
+              {suggestions.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                  {suggestions.map((comp) => (
+                    <div key={comp.id} className="card-hover-scale" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', border: '1px solid var(--gray-mid)', borderRadius: 'var(--radius)', background: 'var(--white)' }}>
+                      <div>
+                        <span style={{ fontSize: '0.62rem', background: `${comp.color}15`, color: comp.color, padding: '2px 8px', borderRadius: '12px', fontWeight: 700, textTransform: 'uppercase' }}>
+                          {comp.category}
+                        </span>
+                        <h4 style={{ fontSize: '0.82rem', fontWeight: 800, marginTop: '8px', marginBottom: '4px', color: 'var(--black)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {comp.title}
+                        </h4>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--gray)', marginBottom: '14px' }}>
+                          Penyelenggara: {comp.organizer}
+                        </div>
+                      </div>
+                      <Link href={`/student/explore?id=${comp.id}`} className="btn btn-outline btn-sm" style={{ width: '100%', textAlign: 'center', padding: '6px 0', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        Lihat Detail Lomba <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.78rem', color: 'var(--gray)', textAlign: 'center', padding: '20px 0' }}>
+                  <i className="fa-solid fa-circle-info" style={{ marginRight: '6px' }}></i> Tidak ada kompetisi aktif yang sesuai saat ini. Silakan hubungi admin atau cari di menu Eksplor.
+                </p>
+              )}
+            </div>
+
+          </div>
+
+          {/* Reset Action */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+            <button className="btn btn-secondary" onClick={handleStart} style={{ gap: '6px', display: 'flex', alignItems: 'center' }}>
               <i className="fa-solid fa-rotate-left"></i> Ulangi Kuis Karakter
             </button>
           </div>
