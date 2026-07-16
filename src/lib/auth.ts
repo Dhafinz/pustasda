@@ -12,16 +12,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) {
+          try {
+            await prisma.activityLog.create({
+              data: { userId: 1, action: 'login_fail', module: 'auth', description: 'Missing credentials payload' }
+            })
+          } catch {}
+          return null
+        }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          })
 
-        if (!user || !user.isActive) return null
+          if (!user) {
+            await prisma.activityLog.create({
+              data: { userId: 1, action: 'login_fail', module: 'auth', description: `User not found: ${credentials.email}` }
+            })
+            return null
+          }
 
-        const isValid = await compare(credentials.password as string, user.password)
-        if (!isValid) return null
+          if (!user.isActive) {
+            await prisma.activityLog.create({
+              data: { userId: user.id, action: 'login_fail', module: 'auth', description: `User is inactive: ${user.email}` }
+            })
+            return null
+          }
+
+          const isValid = await compare(credentials.password as string, user.password)
+          if (!isValid) {
+            await prisma.activityLog.create({
+              data: { userId: user.id, action: 'login_fail', module: 'auth', description: `Invalid password input for: ${user.email}. Password length: ${(credentials.password as string).length}. Hash in DB: ${user.password}` }
+            })
+            return null
+          }
 
         // Log activity
         await prisma.activityLog.create({
@@ -39,6 +64,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           role: user.role,
           photo: user.photo,
+        }
+        } catch (err: any) {
+          try {
+            await prisma.activityLog.create({
+              data: { userId: 1, action: 'login_error', module: 'auth', description: `Error in authorize callback: ${err.message}` }
+            })
+          } catch {}
+          return null
         }
       },
     }),
