@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { loginAction } from './actions'
 import logoImg from './logo.png'
 
 export default function LoginPage() {
@@ -20,20 +20,18 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
+      const result = await loginAction(email, password)
 
-      if (result?.error) {
-        setError('Email atau password salah. Silakan coba lagi.')
+      if (!result?.success) {
+        setError(result?.error || 'Email atau password salah. Silakan coba lagi.')
       } else {
         router.push('/')
         router.refresh()
       }
     } catch {
-      setError('Terjadi kesalahan. Silakan coba lagi.')
+      // NextAuth v5 throws NEXT_REDIRECT on success — this is expected
+      router.push('/')
+      router.refresh()
     } finally {
       setLoading(false)
     }
