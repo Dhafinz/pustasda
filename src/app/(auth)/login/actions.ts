@@ -12,15 +12,10 @@ export async function loginAction(email: string, password: string): Promise<stri
     })
   } catch (error) {
     if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return 'Email atau password salah. Silakan coba lagi.'
-        default:
-          return 'Terjadi kesalahan autentikasi. Silakan coba lagi.'
-      }
+      // Temporarily return detailed error info for debugging
+      return `Auth Error [${error.type}]: ${error.message?.substring(0, 200)}`
     }
     // Re-throw non-AuthError (including NEXT_REDIRECT on success)
-    // Next.js framework catches this and performs the redirect
     throw error
   }
 }
