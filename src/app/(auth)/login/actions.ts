@@ -10,10 +10,11 @@ export async function loginAction(email: string, password: string): Promise<stri
       password,
       redirectTo: '/',
     })
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof AuthError) {
-      // Temporarily return detailed error info for debugging
-      return `Auth Error [${error.type}]: ${error.message?.substring(0, 200)}`
+      // Show the root cause of CallbackRouteError
+      const cause = error.cause?.err || error.cause || error
+      return `[${error.type}] cause: ${cause?.message || cause} | stack: ${cause?.stack?.substring(0, 300)}`
     }
     // Re-throw non-AuthError (including NEXT_REDIRECT on success)
     throw error
