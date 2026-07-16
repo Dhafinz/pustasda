@@ -1,12 +1,21 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { hashSync } from 'bcryptjs'
 import path from 'path'
 import fs from 'fs'
 
-const dbPath = path.join(__dirname, 'dev.db')
-const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
-const prisma = new PrismaClient({ adapter } as any)
+function getPrismaInstance() {
+  const url = process.env.DATABASE_URL || ''
+  if (url.startsWith('postgres') || url.startsWith('db') || url.includes('@')) {
+    return new PrismaClient()
+  } else {
+    const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3')
+    const dbPath = path.join(__dirname, 'dev.db')
+    const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
+    return new PrismaClient({ adapter } as any)
+  }
+}
+
+const prisma = getPrismaInstance()
 
 function email(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.') + '@pustasda.com'
